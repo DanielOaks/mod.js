@@ -131,6 +131,7 @@ function ModPlayer(mod, rate) {
 		var jumpFrame = 0;
 		var jumpRow = 0;
 		for (var chan = 0; chan < mod.channelCount; chan++) {
+			//console.log(currentRow, chan);
 			var note = currentPattern[currentRow][chan];
 			if (note.period != 0 || note.sample != 0) {
 				channels[chan].playing = true;
@@ -147,7 +148,7 @@ function ModPlayer(mod, rate) {
 				}
 			}
 			if (note.effect != 0 || note.effectParameter != 0) {
-				console.log(note.effect.toString(16), note.effectParameter.toString(16));
+				//console.log(note.effect.toString(16), note.effectParameter.toString(16));
 				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
 				channels[chan].periodDelta = 0; /* new effects cancel periodDelta */
 				channels[chan].arpeggioActive = false;
@@ -176,6 +177,10 @@ function ModPlayer(mod, rate) {
 							channels[chan].volumeDelta = -note.effectParameter;
 						}
 						break;
+					case 0x0B: /* jump to order */
+						jump = true;
+						jumpFrame = note.effectParameter;
+						break;
 					case 0x0C: /* volume */
 						if (note.effectParameter > 64) {
 							channels[chan].volume = 64;
@@ -186,7 +191,8 @@ function ModPlayer(mod, rate) {
 					case 0x0D: /* pattern break; jump to next pattern at specified row */
 						jump = true;
 						jumpFrame = currentPosition + 1;
-						jumpRow = note.effectParameter;
+						//Row is written as DECIMAL so grab the high part as a single digit and do some math
+						jumpRow = ((note.effectParameter & 0xF0) >> 4) * 10 + (note.effectParameter & 0x0F);
 						break;
 					case 0x0F: /* tempo change */
 						if (note.effectParameter == 0) {
@@ -221,7 +227,7 @@ function ModPlayer(mod, rate) {
 	loadPosition(0);
 	
 	function getNextPosition() {
-		if (currentPosition + 1 == mod.positionCount) {
+		if (currentPosition + 1 >= mod.positionCount) {
 			loadPosition(mod.positionLoopPoint);
 		} else {
 			loadPosition(currentPosition + 1);
@@ -229,7 +235,7 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function getNextRow() {
-		if (currentRow == 63) {
+		if (currentRow >= 63) {
 			getNextPosition();
 		} else {
 			loadRow(currentRow + 1);

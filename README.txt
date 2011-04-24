@@ -7,6 +7,21 @@ Axy: Volume slide
 Cxx: Set note volume
 Fxx: Set BPM
 
+
+
+In progress:	(todo or not tested fully)
+
+Dxx Pattern break
+Bxx Jump to order
+Exy Subcommands:
+	E1x Fine portamento up
+	E2x Fine portamento down
+	E6x Pattern loop
+	EAx Fine volume slide up
+	EBx Fine volume slide down
+
+
+
 Not implemented:
 
 3xx Portamento to note
@@ -16,21 +31,14 @@ Not implemented:
 7xy Tremolo
 8xx Set note panning position
 9xx Sample offset
-Bxx Jump to order
-Dxx Pattern break
 Exy Subcommands:
 	E0x Amiga LED Filter toggle *
-	E1x Fine portamento up
-	E2x Fine portamento down
 	E3x Glissando control **
 	E4x Vibrato control **
 	E5x Set note fine-tune
-	E6x Pattern loop
 	E7x Tremolo control **
 	E8x Set note panning position ***
 	E9x Re-trigger note
-	EAx Fine volume slide up
-	EBx Fine volume slide down
 	ECx Note cut
 	EDx Note delay
 	EEx Pattern delay
