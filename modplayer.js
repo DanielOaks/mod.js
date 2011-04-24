@@ -127,6 +127,9 @@ function ModPlayer(mod, rate) {
 	function loadRow(rowNumber) {
 		currentRow = rowNumber;
 		currentFrame = 0;
+		var jump = false;	//whether we hit a jump command like Bxx, Dxx
+		var jumpFrame = 0;
+		var jumpRow = 0;
 		for (var chan = 0; chan < mod.channelCount; chan++) {
 			var note = currentPattern[currentRow][chan];
 			if (note.period != 0 || note.sample != 0) {
@@ -144,6 +147,7 @@ function ModPlayer(mod, rate) {
 				}
 			}
 			if (note.effect != 0 || note.effectParameter != 0) {
+				console.log(note.effect.toString(16), note.effectParameter.toString(16));
 				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
 				channels[chan].periodDelta = 0; /* new effects cancel periodDelta */
 				channels[chan].arpeggioActive = false;
@@ -163,7 +167,7 @@ function ModPlayer(mod, rate) {
 					case 0x02: /* pitch slide down - 2xx */
 						channels[chan].periodDelta = note.effectParameter;
 						break;
-					case 0x0a: /* volume slide - Axy */
+					case 0x0A: /* volume slide - Axy */
 						if (note.effectParameter & 0xf0) {
 							/* volume increase by x */
 							channels[chan].volumeDelta = note.effectParameter >> 4;
@@ -172,14 +176,19 @@ function ModPlayer(mod, rate) {
 							channels[chan].volumeDelta = -note.effectParameter;
 						}
 						break;
-					case 0x0c: /* volume */
+					case 0x0C: /* volume */
 						if (note.effectParameter > 64) {
 							channels[chan].volume = 64;
 						} else {
 							channels[chan].volume = note.effectParameter;
 						}
 						break;
-					case 0x0f: /* tempo change */
+					case 0x0D: /* pattern break; jump to next pattern at specified row */
+						jump = true;
+						jumpFrame = currentPosition + 1;
+						jumpRow = note.effectParameter;
+						break;
+					case 0x0F: /* tempo change */
 						if (note.effectParameter == 0) {
 						} else if (note.effectParameter <= 32) {
 							framesPerRow = note.effectParameter;
@@ -189,6 +198,13 @@ function ModPlayer(mod, rate) {
 						break;
 				}
 			}
+		}
+
+		//Apply jump after all channels for current row are processed
+		if (jump) {
+			currentPosition = jumpFrame;
+			currentRow = jumpRow;
+			loadPosition(currentPosition);
 		}
 	}
 	
@@ -221,7 +237,6 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function doFrame() {
-		currentFrame++;
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 		for (var chan = 0; chan < mod.channelCount; chan++) {
@@ -243,6 +258,8 @@ function ModPlayer(mod, rate) {
 				channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][noteNumber] * 2;
 			}
 		}
+
+		currentFrame++;
 		
 		if (currentFrame == framesPerRow) {
 			getNextRow();

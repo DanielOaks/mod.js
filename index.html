@@ -14,17 +14,18 @@
 			}
 			
 			var playing = false;
+			var bufferSeconds = 5; /* don't buffer too much or it will sputter doing the work */
+			var bufferLength = 44100 * 2 * bufferSeconds;
 			function play() {
 				playing = true;
-				// initially buffer 10 seconds (44100 * 2(stereo) * 10)
-				dynamicAudio.write(modPlayer.getSamples(882000));
+				dynamicAudio.write(modPlayer.getSamples(bufferLength));
 				bufferMoreData();
 			}
 			
 			function bufferMoreData() {
 				if (playing) {
-					dynamicAudio.write(modPlayer.getSamples(88200));
-					setTimeout(bufferMoreData, 100);
+					dynamicAudio.write(modPlayer.getSamples(bufferLength));
+					setTimeout(bufferMoreData, 1000);
 				}
 			}
 			
@@ -48,6 +49,7 @@
 				})(file);
 
 				reader.readAsBinaryString(file);
+				document.getElementById('status').innerText = '';
 			}
 
 			function loadRemote(path) {
@@ -86,6 +88,7 @@
 			<li><a href="javascript:loadRemote('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
 			<li><a href="javascript:loadRemote('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
 			<li><a href="javascript:loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
+			<li>From harddrive: <input type="file" id="input" multiple="true" onchange="loadLocal(this.files[0])"></li>
 		</ul>
 		<!-- <button onclick="stop()">stop</button> --><p>(refresh the page to stop audio - no proper playback controls yet...)</p>
 		<div id="status"></div>
