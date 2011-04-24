@@ -151,6 +151,8 @@ function ModPlayer(mod, rate) {
 				//console.log(note.effect.toString(16), note.effectParameter.toString(16));
 				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
 				channels[chan].periodDelta = 0; /* new effects cancel periodDelta */
+				channels[chan].finePeriodDelta = 0;
+				channels[chan].fineVolumeDelta = 0;
 				channels[chan].arpeggioActive = false;
 				switch (note.effect) {
 					case 0x00: /* arpeggio: 0xy */
@@ -194,6 +196,26 @@ function ModPlayer(mod, rate) {
 						//Row is written as DECIMAL so grab the high part as a single digit and do some math
 						jumpRow = ((note.effectParameter & 0xF0) >> 4) * 10 + (note.effectParameter & 0x0F);
 						break;
+						
+					case 0x0E:
+						console.log("EXTENDED COMMANDS: ", note.extEffect, note.extEffectParameter);
+						switch (note.extEffect) {	//yes we're doing nested switch
+							case 0x01: /* fine pitch slide up - E1x */
+								channels[chan].finePeriodDelta = -note.extEffectParameter;
+								break;
+							case 0x02: /* fine pitch slide down - E2x */
+								channels[chan].finePeriodDelta = note.extEffectParameter;
+								break;
+							case 0x0A: /* fine volume slide up - EAx */
+								channels[chan].fineVolumeDelta = note.extEffectParameter;
+								break;
+							case 0x0B: /* fine volume slide down - EBx */
+								channels[chan].fineVolumeDelta = -note.extEffectParameter;
+								break;
+						}
+						
+						break;
+						
 					case 0x0F: /* tempo change */
 						if (note.effectParameter == 0) {
 						} else if (note.effectParameter <= 32) {
@@ -246,6 +268,10 @@ function ModPlayer(mod, rate) {
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 		for (var chan = 0; chan < mod.channelCount; chan++) {
+			if (currentFrame == 0) { /* apply extra fine slides only once */
+				channels[chan].ticksPerSample += channels[chan].finePeriodDelta * 2;
+				channels[chan].volume += channels[chan].fineVolumeDelta;
+			}
 			channels[chan].volume += channels[chan].volumeDelta;
 			if (channels[chan].volume > 64) {
 				channels[chan].volume = 64;
