@@ -1,35 +1,93 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
 	<head>
-		<script type="text/javascript" src="modfile.js"></script>
-		<script type="text/javascript" src="modplayer.js"></script>
-		<script src="swfobject.js"></script>
-		<script type="text/javascript" src="dynamicaudio.js"></script>
+		<script src="modfile.js"></script>
+		<script src="modplayer.js"></script>
 		
 		<script type="text/javascript">
 			var modPlayer;
-			var dynamicAudio;
-			
-			function init() {
-				dynamicAudio = new DynamicAudio({'swf': 'dynamicaudio.swf'});
-			}
 			
 			var playing = false;
-			var bufferSeconds = 5; /* don't buffer too much or it will sputter doing the work */
+			var bufferOffset = 0; //how far into the buffer we've written
+			var sampleRate = 44100;
+			var bufferSeconds = 3;
+			var bufferInterval = 5;
 			var bufferLength = 44100 * 2 * bufferSeconds;
-			function play() {
-				playing = true;
-				dynamicAudio.write(modPlayer.getSamples(bufferLength));
-				bufferMoreData();
+			var modBuffer = new Float32Array(bufferLength); //Float32Array
+
+			/* audiodata.js remnant */
+			/*var audioParameters = new AudioParameters(2, sampleRate);     
+			var audioSource = new AudioDataMemorySource(audioParameters, modBuffer);
+			var audioDestination = new AudioDataDestination();
+			audioDestination.writeAsync(audioSource);*/
+
+			//NOTE: Copied from out-of-data Mozilla Wiki example
+			//Float32Array.slice no longer exists. Must use Float32Array.subarray
+			function AudioDataDestination(sampleRate, readFn) {
+				// Initialize the audio output.
+				var audio = new Audio();
+				audio.mozSetup(2, sampleRate);
+
+				var currentWritePosition = 0;
+				var prebufferSize = sampleRate; // buffer 500ms
+				var tail = null;
+
+				// The function called with regular interval to populate 
+				// the audio output buffer.
+				setInterval(function() {
+					var written;
+					// Check if some data was not written in previous attempts.
+					if(tail) {  
+						written = audio.mozWriteAudio(tail);
+						currentWritePosition += written;
+						if (written < tail.length) {
+							// Not all the data was written, saving the tail...
+							tail = tail.subarray(0, written); //tail = tail.slice(written);
+							return; // ... and exit the function.
+						}
+						tail = null;
+					}
+
+					// Check if we need add some data to the audio output.
+					var currentPosition = audio.mozCurrentSampleOffset();
+					var available = currentPosition + prebufferSize - currentWritePosition;
+					if(available > 0) {
+						// Request some sound data from the callback function.
+						var soundData = new Float32Array(parseFloat(available));
+						readFn(soundData);
+
+						// Writing the data.
+						written = audio.mozWriteAudio(soundData);
+						if(written < soundData.length) {
+							// Not all the data was written, saving the tail.
+							tail = soundData.subarray(0, written); //tail = soundData.slice(written);
+						}
+						currentWritePosition += written;
+					}
+				}, 400);
 			}
-			
-			function bufferMoreData() {
-				if (playing) {
-					dynamicAudio.write(modPlayer.getSamples(bufferLength));
-					setTimeout(bufferMoreData, 100);
+
+			// Control and generate the sound.
+			var currentSoundSample;
+			var sampleRate = 44100;
+
+			function requestSoundData(soundData) {
+				if (!playing) { return; }
+				var data = modPlayer.getSamples(bufferLength);
+				for (var i=0, size=soundData.length; i<size; i++) {
+					soundData[i] = data[i];
 				}
+				currentSoundSample += data.length;
 			}
-			
+
+			var audioDestination = new AudioDataDestination(sampleRate, requestSoundData);
+
+
+			function play() {
+				currentSoundSample = 0;
+				playing = true;
+			}
+
 			function stop() {
 				playing = false;
 			}
@@ -80,7 +138,7 @@
 			}
 		</script>
 	</head>
-	<body onload="init()">
+	<body>
 		<h1>JSModPlayer</h1>
 		<h2>the imaginatively named Javascript .mod player by Gasman</h2>
 		<ul>

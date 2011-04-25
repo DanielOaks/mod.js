@@ -204,7 +204,7 @@ function ModPlayer(mod, rate) {
 						break;
 						
 					case 0x0E:
-						console.log("EXTENDED COMMANDS: ", note.extEffect, note.extEffectParameter);
+						//console.log("EXTENDED COMMANDS: ", note.extEffect, note.extEffectParameter);
 						switch (note.extEffect) {	//yes we're doing nested switch
 							case 0x01: /* fine pitch slide up - E1x */
 								channels[chan].finePeriodDelta = -note.extEffectParameter;
@@ -256,7 +256,7 @@ function ModPlayer(mod, rate) {
 		}
 		
 		//if we're already looping then decrement count when we hit the end
-		console.log("LOOP", exLoop, exLoopCount, exLoopStart, exLoopEnd);
+		//console.log("LOOP", exLoop, exLoopCount, exLoopStart, exLoopEnd);
 		if (exLoop && exLoopCount > 0) {
 			if (currentRow == exLoopEnd) {
 				exLoopCount--;
