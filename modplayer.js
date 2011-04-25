@@ -110,6 +110,10 @@ function ModPlayer(mod, rate) {
 	var currentPattern;
 	var currentPosition;
 	var currentRow;
+	var exLoop = false;		//whether E6x looping is currently set
+	var exLoopStart = 0;	//loop point set up by E60
+	var exLoopEnd = 0;		//end of loop (where we hit a E6x cmd) for accurate counting
+	var exLoopCount = 0;	//loops remaining
 	
 	var channels = [];
 	for (var chan = 0; chan < mod.channelCount; chan++) {
@@ -120,6 +124,8 @@ function ModPlayer(mod, rate) {
 			volume: 0,
 			volumeDelta: 0,
 			periodDelta: 0,
+			fineVolumeDelta: 0,
+			finePeriodDelta: 0,
 			arpeggioActive: false
 		};
 	}
@@ -147,12 +153,12 @@ function ModPlayer(mod, rate) {
 					channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
 				}
 			}
+			channels[chan].finePeriodDelta = 0;
+			channels[chan].fineVolumeDelta = 0;
 			if (note.effect != 0 || note.effectParameter != 0) {
 				//console.log(note.effect.toString(16), note.effectParameter.toString(16));
 				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
 				channels[chan].periodDelta = 0; /* new effects cancel periodDelta */
-				channels[chan].finePeriodDelta = 0;
-				channels[chan].fineVolumeDelta = 0;
 				channels[chan].arpeggioActive = false;
 				switch (note.effect) {
 					case 0x00: /* arpeggio: 0xy */
@@ -212,6 +218,20 @@ function ModPlayer(mod, rate) {
 							case 0x0B: /* fine volume slide down - EBx */
 								channels[chan].fineVolumeDelta = -note.extEffectParameter;
 								break;
+							case 0x06:
+								//set up loops only if they're new
+								if (!exLoop) {
+									//set loop start with E60
+									if (note.extEffectParameter == 0) {
+										exLoop = true;
+										exLoopStart = currentRow;
+									} else {
+										//set loop end with E6x
+										exLoopEnd = currentRow;
+										exLoopCount = note.extEffectParameter;
+									}
+								}
+								break;
 						}
 						
 						break;
@@ -234,6 +254,21 @@ function ModPlayer(mod, rate) {
 			currentRow = jumpRow;
 			loadPosition(currentPosition);
 		}
+		
+		//if we're already looping then decrement count when we hit the end
+		console.log("LOOP", exLoop, exLoopCount, exLoopStart, exLoopEnd);
+		if (exLoop && exLoopCount > 0) {
+			if (currentRow == exLoopEnd) {
+				exLoopCount--;
+				currentRow = exLoopStart;
+				loadPosition(currentPosition);
+			}
+		} else {
+			//turn off the loop once it counts down
+			exLoop = false;
+			exLoopCount = 0;
+		}
+		
 	}
 	
 	function loadPattern(patternNumber) {
