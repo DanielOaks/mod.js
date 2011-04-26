@@ -1,3 +1,4 @@
+
 Effects implemented:
 
 0xy: Arpeggio
@@ -6,43 +7,44 @@ Effects implemented:
 Axy: Volume slide
 Cxx: Set note volume
 Fxx: Set BPM
-
-
-
-In progress:	(todo or not tested fully)
-
-Dxx Pattern break
-Bxx Jump to order
 Exy Subcommands:
 	E1x Fine portamento up
 	E2x Fine portamento down
-	E6x Pattern loop
 	EAx Fine volume slide up
 	EBx Fine volume slide down
 
 
 
-Not implemented:
+In progress:	(todo or not tested fully)
 
 3xx Portamento to note
-4xy Vibrato
 5xy Portamento to note with volume slide
-6xy Vibrato with volume slide
-7xy Tremolo
-8xx Set note panning position
 9xx Sample offset
+Dxx Pattern break [buggy]
+Bxx Jump to order [buggy]
 Exy Subcommands:
-	E0x Amiga LED Filter toggle *
-	E3x Glissando control **
-	E4x Vibrato control **
-	E5x Set note fine-tune
-	E7x Tremolo control **
-	E8x Set note panning position ***
+	E6x Pattern loop
 	E9x Re-trigger note
 	ECx Note cut
 	EDx Note delay
+	E5x Set note fine-tune
+
+
+
+Not implemented:
+
+4xy Vibrato
+6xy Vibrato with volume slide
+7xy Tremolo
+8xx Set note panning position
+Exy Subcommands:
+	E0x Amiga LED Filter toggle
+	E3x Glissando control
+	E4x Vibrato control
+	E7x Tremolo control
+	E8x Set note panning position
 	EEx Pattern delay
-	EFx Funk it! *
+	EFx Funk it!
 
 http://www.milkytracker.org/docs/MilkyTracker.html#effects
 
