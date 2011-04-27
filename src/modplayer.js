@@ -1,4 +1,10 @@
 /*
+	Useful docs
+		Explains effect calculations: http://www.mediatel.lu/workshop/audio/fileformat/h_mod.html
+
+*/
+
+/*
 ModPeriodTable[ft][n] = the period to use for note number n at finetune value ft.
 Finetune values are in twos-complement, i.e. [0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1]
 The first table is used to generate a reverse lookup table, to find out the note number
