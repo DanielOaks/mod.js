@@ -4,20 +4,22 @@ Effects implemented:
 0xy: Arpeggio
 1xx: Pitch slide up (portamento)
 2xx: Pitch slide down
+3xx Portamento to note [slightly buggy]
 Axy: Volume slide
 Cxx: Set note volume
 Fxx: Set BPM
 Exy Subcommands:
 	E1x Fine portamento up
 	E2x Fine portamento down
+	E5x Set note fine-tune [untested]
 	EAx Fine volume slide up
 	EBx Fine volume slide down
+	ECx Note cut
+	EDx Note delay
 
 
+In progress:
 
-In progress:	(todo or not tested fully)
-
-3xx Portamento to note
 5xy Portamento to note with volume slide
 9xx Sample offset
 Dxx Pattern break [buggy]
@@ -25,9 +27,6 @@ Bxx Jump to order [buggy]
 Exy Subcommands:
 	E6x Pattern loop
 	E9x Re-trigger note
-	ECx Note cut
-	EDx Note delay
-	E5x Set note fine-tune
 
 
 

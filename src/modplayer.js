@@ -91,6 +91,14 @@ var ModPeriodTable = [
 	 431 , 407 , 384 , 363 , 342 , 323 , 305 , 288 , 272 , 256 , 242 , 228,
 	 216 , 203 , 192 , 181 , 171 , 161 , 152 , 144 , 136 , 128 , 121 , 114,
 	 108 , 101 , 96  , 90  , 85  , 80  , 76  , 72  , 68  , 64  , 60  , 57 ]];
+	 
+var SineTable = [
+	0,24,49,74,97,120,141,161,180,197,212,224,235,244,250,253,
+	255,253,250,244,235,224,212,197,180,161,141,120,97,74,49,
+	24,0,-24,-49,-74,-97,-120,-141,-161,-180,-197,-212,-224,
+	-235,-244,-250,-253,-255,-253,-250,-244,-235,-224,-212,-197,
+	-180,-161,-141,-120,-97,-74,-49,-24
+];
 
 var ModPeriodToNoteNumber = {};
 for (var i = 0; i < ModPeriodTable[0].length; i++) {
@@ -120,6 +128,9 @@ function ModPlayer(mod, rate) {
 	var exLoopStart = 0;	//loop point set up by E60
 	var exLoopEnd = 0;		//end of loop (where we hit a E6x cmd) for accurate counting
 	var exLoopCount = 0;	//loops remaining
+	var jump = false;	//whether we hit a jump command like Bxx, Dxx
+	var jumpFrame = 0;
+	var jumpRow = 0;
 	
 	var channels = [];
 	for (var chan = 0; chan < mod.channelCount; chan++) {
@@ -132,6 +143,12 @@ function ModPlayer(mod, rate) {
 			periodDelta: 0,
 			fineVolumeDelta: 0,
 			finePeriodDelta: 0,
+			tonePortaTarget: 0, //target for 3xx, 5xy as period value
+			tonePortaDelta: 0,
+			tonePortaVolStep: 0, //remember pitch slide step for when 5xx is used
+			tonePortaActive: false,
+			cut: false,			//tick to cut at, or false if no cut
+			delay: false,		//tick to delay note until, or false if no delay
 			arpeggioActive: false
 		};
 	}
@@ -139,11 +156,8 @@ function ModPlayer(mod, rate) {
 	function loadRow(rowNumber) {
 		currentRow = rowNumber;
 		currentFrame = 0;
-		var jump = false;	//whether we hit a jump command like Bxx, Dxx
-		var jumpFrame = 0;
-		var jumpRow = 0;
 		for (var chan = 0; chan < mod.channelCount; chan++) {
-			//console.log(currentRow, chan);
+			var prevNote = channels[chan].prevNote;
 			var note = currentPattern[currentRow][chan];
 			if (note.period != 0 || note.sample != 0) {
 				channels[chan].playing = true;
@@ -154,13 +168,22 @@ function ModPlayer(mod, rate) {
 					channels[chan].volume = channels[chan].sample.volume;
 					channels[chan].finetune = channels[chan].sample.finetune;
 				}
-				if (note.period != 0) {
-					channels[chan].noteNumber = ModPeriodToNoteNumber[note.period];
-					channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
+				if (note.period != 0) { // && note.effect != 0x03
+					//the note specified in a tone porta command is not actually played
+					if (note.effect != 0x03) {
+						channels[chan].noteNumber = ModPeriodToNoteNumber[note.period];
+						channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
+					} else {
+						channels[chan].noteNumber = ModPeriodToNoteNumber[prevNote.period]
+						channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
+					}
 				}
 			}
 			channels[chan].finePeriodDelta = 0;
 			channels[chan].fineVolumeDelta = 0;
+			channels[chan].cut = false;
+			channels[chan].delay = false;
+			channels[chan].tonePortaActive = false;
 			if (note.effect != 0 || note.effectParameter != 0) {
 				//console.log(note.effect.toString(16), note.effectParameter.toString(16));
 				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
@@ -181,6 +204,22 @@ function ModPlayer(mod, rate) {
 						break;
 					case 0x02: /* pitch slide down - 2xx */
 						channels[chan].periodDelta = note.effectParameter;
+						break;
+					case 0x03: /* slide to note 3xy - */
+						channels[chan].tonePortaActive = true;
+						channels[chan].tonePortaTarget = (note.period != 0) ? note.period : channels[chan].tonePortaTarget;
+						var dir = (channels[chan].tonePortaTarget < prevNote.period) ? -1 : 1;
+						channels[chan].tonePortaDelta += (note.effectParameter * dir);
+						channels[chan].tonePortaVolStep = (note.effectParameter * dir);
+						break;
+					case 0x05: /* portamento to note with volume slide 5xy */
+						channels[chan].tonePortaActive = true;
+						if (note.effectParameter & 0xf0) {
+							channels[chan].volumeDelta = note.effectParameter >> 4;
+						} else {
+							channels[chan].volumeDelta = -note.effectParameter;
+						}
+						channels[chan].tonePortaDelta += channels[chan].tonePortaVolStep;
 						break;
 					case 0x0A: /* volume slide - Axy */
 						if (note.effectParameter & 0xf0) {
@@ -210,7 +249,6 @@ function ModPlayer(mod, rate) {
 						break;
 						
 					case 0x0E:
-						//console.log("EXTENDED COMMANDS: ", note.extEffect, note.extEffectParameter);
 						switch (note.extEffect) {	//yes we're doing nested switch
 							case 0x01: /* fine pitch slide up - E1x */
 								channels[chan].finePeriodDelta = -note.extEffectParameter;
@@ -218,11 +256,20 @@ function ModPlayer(mod, rate) {
 							case 0x02: /* fine pitch slide down - E2x */
 								channels[chan].finePeriodDelta = note.extEffectParameter;
 								break;
+							case 0x05: /* set finetune - E5x */
+								channels[chan].finetune = note.extEffectParameter;
+								break;
 							case 0x0A: /* fine volume slide up - EAx */
 								channels[chan].fineVolumeDelta = note.extEffectParameter;
 								break;
 							case 0x0B: /* fine volume slide down - EBx */
 								channels[chan].fineVolumeDelta = -note.extEffectParameter;
+								break;
+							case 0x0C: /* note cute - ECx */
+								channels[chan].cut = note.extEffectParameter;
+								break;
+							case 0x0D: /* note delay - EDx */
+								channels[chan].delay = note.extEffectParameter;
 								break;
 							case 0x06:
 								//set up loops only if they're new
@@ -242,25 +289,27 @@ function ModPlayer(mod, rate) {
 						
 						break;
 						
-					case 0x0F: /* tempo change */
-						if (note.effectParameter == 0) {
-						} else if (note.effectParameter <= 32) {
-							framesPerRow = note.effectParameter;
+					case 0x0F: /* tempo change. <=32 sets ticks/row, greater sets beats/min instead */
+						var newSpeed = (note.effectParameter == 0) ? 1 : note.effectParameter; /* 0 is treated as 1 */
+						if (newSpeed <= 32) { 
+							framesPerRow = newSpeed;
 						} else {
-							setBpm(note.effectParameter);
+							setBpm(newSpeed);
 						}
 						break;
 				}
 			}
+			
+			//for figuring out tone portamento effect
+			if (note.period != 0) { channels[chan].prevNote = note; }
+			
+			if (channels[chan].tonePortaActive == false) {
+				channels[chan].tonePortaDelta = 0;
+				channels[chan].tonePortaTarget = 0;
+				channels[chan].tonePortaVolStep = 0;
+			}
 		}
 
-		//Apply jump after all channels for current row are processed
-		if (jump) {
-			currentPosition = jumpFrame;
-			currentRow = jumpRow;
-			loadPosition(currentPosition);
-		}
-		
 		//if we're already looping then decrement count when we hit the end
 		//console.log("LOOP", exLoop, exLoopCount, exLoopStart, exLoopEnd);
 		if (exLoop && exLoopCount > 0) {
@@ -277,39 +326,27 @@ function ModPlayer(mod, rate) {
 		
 	}
 	
-	function loadPattern(patternNumber) {
+	function loadPattern(patternNumber, row) {
+		if (row === undefined) { row = 0; }
 		currentPattern = mod.patterns[patternNumber];
-		loadRow(0);
+		loadRow(row);
 	}
 	
-	function loadPosition(positionNumber) {
+	function loadPosition(positionNumber, row) {
+		if (row === undefined) { row = 0; }
 		currentPosition = positionNumber;
-		loadPattern(mod.positions[currentPosition]);
+		loadPattern(mod.positions[currentPosition], row);
 	}
 	
 	loadPosition(0);
 	
-	function getNextPosition() {
-		if (currentPosition + 1 >= mod.positionCount) {
-			loadPosition(mod.positionLoopPoint);
-		} else {
-			loadPosition(currentPosition + 1);
-		}
-	}
-	
-	function getNextRow() {
-		if (currentRow >= 63) {
-			getNextPosition();
-		} else {
-			loadRow(currentRow + 1);
-		}
-	}
-	
 	function doFrame() {
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
+
 		for (var chan = 0; chan < mod.channelCount; chan++) {
-			if (currentFrame == 0) { /* apply extra fine slides only once */
+			var finetune = channels[chan].finetune;
+			if (currentFrame == 0) { /* apply fine slides only once */
 				channels[chan].ticksPerSample += channels[chan].finePeriodDelta * 2;
 				channels[chan].volume += channels[chan].fineVolumeDelta;
 			}
@@ -319,7 +356,21 @@ function ModPlayer(mod, rate) {
 			} else if (channels[chan].volume < 0) {
 				channels[chan].volume = 0;
 			}
+			if (channels[chan].cut !== false && currentFrame >= channels[chan].cut) {
+				channels[chan].volume = 0;
+			}
+			if (channels[chan].delay !== false && currentFrame <= channels[chan].delay) {
+				channels[chan].volume = 0;
+			}
 			channels[chan].ticksPerSample += channels[chan].periodDelta * 2;
+			if (channels[chan].tonePortaActive) {
+				//console.log(channels[chan].tonePortaTarget, channels[chan].ticksPerSample, channels[chan].tonePortaTarget * 2);
+				channels[chan].ticksPerSample += channels[chan].tonePortaDelta * 2;
+				if (channels[chan].ticksPerSample > channels[chan].tonePortaTarget * 2) { //don't slide above the allowed note
+					channels[chan].ticksPerSample = channels[chan].tonePortaTarget * 2;
+				}
+			}
+			
 			if (channels[chan].ticksPerSample > 4096) {
 				channels[chan].ticksPerSample = 4096;
 			} else if (channels[chan].ticksPerSample < 96) { /* equivalent to period 48, a bit higher than the highest note */
@@ -328,14 +379,38 @@ function ModPlayer(mod, rate) {
 			if (channels[chan].arpeggioActive) {
 				channels[chan].arpeggioCounter++;
 				var noteNumber = channels[chan].arpeggioNotes[channels[chan].arpeggioCounter % 3];
-				channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][noteNumber] * 2;
+				channels[chan].ticksPerSample = ModPeriodTable[finetune][noteNumber] * 2;
 			}
 		}
 
 		currentFrame++;
-		
+
+		//if we completed all the ticks, check whether we move on in the mod
 		if (currentFrame == framesPerRow) {
-			getNextRow();
+			currentPosition++;
+			//jump bypasses other logic
+			if (jump) {
+				currentPosition = jumpFrame;
+				currentRow = jumpRow;
+				loadPosition(currentPosition);
+				jump = false;
+				jumpFrame = 0;
+				jumpRow = 0;
+			} else {
+				//end of pattern. go to next
+				if (currentRow >= 63) {
+					if (currentPosition >= mod.positionCount) {
+						loadPosition(mod.positionLoopPoint);
+						loadRow(0);
+					} else {
+						loadPosition(currentPosition);
+						loadRow(0);
+					}
+				} else {
+					//not end of pattern yet, just keep moving
+					loadRow(currentRow + 1);
+				}
+			}
 		}
 	}
 	

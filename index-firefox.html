@@ -36,7 +36,6 @@
 					currentSampleOffset = outputAudio.mozCurrentSampleOffset();
 					playHasStopped = 0;
 					if (written < audioData.length) { // firefox buffer is full, stop writing
-						console.log('Buffer overflow ' + written + '/' + audioData.length + ' written, buffer: ' + (currentWritePosition - outputAudio.mozCurrentSampleOffset()));
 						return;
 					}
 				}
@@ -120,6 +119,7 @@
 			<li><a href="javascript:loadRemote('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
 			<li><a href="javascript:loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
 			<li><a href="javascript:loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
+			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
 			<li>From harddrive: <input type="file" id="input" multiple="true" onchange="loadLocal(this.files[0])"></li>
 		</ul>
 		<div id="status"></div>
@@ -133,7 +133,7 @@
 			<a href="http://billy.wenge-murphy.com/">Billy Wenge-Murphy</a> -
 			<a href="http://twitter.com/billywm">@BillyWM</a> -
 			<a href="mailto:iamthebilly@gmail.com">iamthebilly@gmail.com</a> - April 2011.<br>
-			Added local file loading (HTML5 File API), extra effects, fixes to playback
+			Added local file loading (HTML5 File API), implemented more effects, fixes to playback
 		</p>
 		<p>Source code on Github:
 			<a href="http://github.com/gasman/jsmodplayer">Gasman</a> (original)
