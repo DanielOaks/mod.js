@@ -131,6 +131,9 @@ function ModPlayer(mod, rate) {
 	var jump = false;	//whether we hit a jump command like Bxx, Dxx
 	var jumpFrame = 0;
 	var jumpRow = 0;
+	var doBreak = false;
+	var	breakPos = 0;
+	var	breakRow = 0;
 	
 	var channels = [];
 	for (var chan = 0; chan < mod.channelCount; chan++) {
@@ -156,78 +159,83 @@ function ModPlayer(mod, rate) {
 	function loadRow(rowNumber) {
 		currentRow = rowNumber;
 		currentFrame = 0;
+		doBreak = false;
+		breakPos = 0;
+		breakRow = 0;
 		for (var chan = 0; chan < mod.channelCount; chan++) {
-			var prevNote = channels[chan].prevNote;
+			//console.log("Processing channel", chan, " row ", currentRow);
+			var channel = channels[chan];
+			var prevNote = channel.prevNote;
 			var note = currentPattern[currentRow][chan];
 			if (note.period != 0 || note.sample != 0) {
-				channels[chan].playing = true;
-				channels[chan].samplePosition = 0;
-				channels[chan].ticksSinceStartOfSample = 0; /* that's 'sample' as in 'individual volume reading' */
+				channel.playing = true;
+				channel.samplePosition = 0;
+				channel.ticksSinceStartOfSample = 0; /* that's 'sample' as in 'individual volume reading' */
 				if (note.sample != 0) {
-					channels[chan].sample = mod.samples[note.sample - 1];
-					channels[chan].volume = channels[chan].sample.volume;
-					channels[chan].finetune = channels[chan].sample.finetune;
+					channel.sample = mod.samples[note.sample - 1];
+					channel.volume = channel.sample.volume;
+					channel.finetune = channel.sample.finetune;
 				}
 				if (note.period != 0) { // && note.effect != 0x03
 					//the note specified in a tone porta command is not actually played
 					if (note.effect != 0x03) {
-						channels[chan].noteNumber = ModPeriodToNoteNumber[note.period];
-						channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
+						channel.noteNumber = ModPeriodToNoteNumber[note.period];
+						channel.ticksPerSample = ModPeriodTable[channel.finetune][channel.noteNumber] * 2;
 					} else {
-						channels[chan].noteNumber = ModPeriodToNoteNumber[prevNote.period]
-						channels[chan].ticksPerSample = ModPeriodTable[channels[chan].finetune][channels[chan].noteNumber] * 2;
+						channel.noteNumber = ModPeriodToNoteNumber[prevNote.period]
+						channel.ticksPerSample = ModPeriodTable[channel.finetune][channel.noteNumber] * 2;
 					}
 				}
 			}
-			channels[chan].finePeriodDelta = 0;
-			channels[chan].fineVolumeDelta = 0;
-			channels[chan].cut = false;
-			channels[chan].delay = false;
-			channels[chan].tonePortaActive = false;
+			channel.finePeriodDelta = 0;
+			channel.fineVolumeDelta = 0;
+			channel.cut = false;
+			channel.delay = false;
+			channel.tonePortaActive = false;
 			if (note.effect != 0 || note.effectParameter != 0) {
-				//console.log(note.effect.toString(16), note.effectParameter.toString(16));
-				channels[chan].volumeDelta = 0; /* new effects cancel volumeDelta */
-				channels[chan].periodDelta = 0; /* new effects cancel periodDelta */
-				channels[chan].arpeggioActive = false;
+				channel.volumeDelta = 0; /* new effects cancel volumeDelta */
+				channel.periodDelta = 0; /* new effects cancel periodDelta */
+				channel.arpeggioActive = false;
 				switch (note.effect) {
 					case 0x00: /* arpeggio: 0xy */
-						channels[chan].arpeggioActive = true;
-						channels[chan].arpeggioNotes = [
-							channels[chan].noteNumber,
-							channels[chan].noteNumber + (note.effectParameter >> 4),
-							channels[chan].noteNumber + (note.effectParameter & 0x0f)
+						channel.arpeggioActive = true;
+						channel.arpeggioNotes = [
+							channel.noteNumber,
+							channel.noteNumber + (note.effectParameter >> 4),
+							channel.noteNumber + (note.effectParameter & 0x0f)
 						]
-						channels[chan].arpeggioCounter = 0;
+						channel.arpeggioCounter = 0;
 						break;
 					case 0x01: /* pitch slide up - 1xx */
-						channels[chan].periodDelta = -note.effectParameter;
+						channel.periodDelta = -note.effectParameter;
 						break;
 					case 0x02: /* pitch slide down - 2xx */
-						channels[chan].periodDelta = note.effectParameter;
+						channel.periodDelta = note.effectParameter;
 						break;
 					case 0x03: /* slide to note 3xy - */
-						channels[chan].tonePortaActive = true;
-						channels[chan].tonePortaTarget = (note.period != 0) ? note.period : channels[chan].tonePortaTarget;
-						var dir = (channels[chan].tonePortaTarget < prevNote.period) ? -1 : 1;
-						channels[chan].tonePortaDelta += (note.effectParameter * dir);
-						channels[chan].tonePortaVolStep = (note.effectParameter * dir);
+						channel.tonePortaActive = true;
+						channel.tonePortaTarget = (note.period != 0) ? note.period : channel.tonePortaTarget;
+						var dir = (channel.tonePortaTarget < prevNote.period) ? -1 : 1;
+						channel.tonePortaDelta = (note.effectParameter * dir);
+						channel.tonePortaVolStep = (note.effectParameter * dir);
+						channel.tonePortaDir = dir;
 						break;
 					case 0x05: /* portamento to note with volume slide 5xy */
-						channels[chan].tonePortaActive = true;
+						channel.tonePortaActive = true;
 						if (note.effectParameter & 0xf0) {
-							channels[chan].volumeDelta = note.effectParameter >> 4;
+							channel.volumeDelta = note.effectParameter >> 4;
 						} else {
-							channels[chan].volumeDelta = -note.effectParameter;
+							channel.volumeDelta = -note.effectParameter;
 						}
-						channels[chan].tonePortaDelta += channels[chan].tonePortaVolStep;
+						channel.tonePortaDelta = channel.tonePortaVolStep;
 						break;
 					case 0x0A: /* volume slide - Axy */
 						if (note.effectParameter & 0xf0) {
 							/* volume increase by x */
-							channels[chan].volumeDelta = note.effectParameter >> 4;
+							channel.volumeDelta = note.effectParameter >> 4;
 						} else {
 							/* volume decrease by y */
-							channels[chan].volumeDelta = -note.effectParameter;
+							channel.volumeDelta = -note.effectParameter;
 						}
 						break;
 					case 0x0B: /* jump to order */
@@ -236,40 +244,40 @@ function ModPlayer(mod, rate) {
 						break;
 					case 0x0C: /* volume */
 						if (note.effectParameter > 64) {
-							channels[chan].volume = 64;
+							channel.volume = 64;
 						} else {
-							channels[chan].volume = note.effectParameter;
+							channel.volume = note.effectParameter;
 						}
 						break;
 					case 0x0D: /* pattern break; jump to next pattern at specified row */
-						jump = true;
-						jumpFrame = currentPosition + 1;
+						doBreak = true;
+						breakPos = currentPosition + 1;
 						//Row is written as DECIMAL so grab the high part as a single digit and do some math
-						jumpRow = ((note.effectParameter & 0xF0) >> 4) * 10 + (note.effectParameter & 0x0F);
+						breakRow = ((note.effectParameter & 0xF0) >> 4) * 10 + (note.effectParameter & 0x0F);
 						break;
 						
 					case 0x0E:
 						switch (note.extEffect) {	//yes we're doing nested switch
 							case 0x01: /* fine pitch slide up - E1x */
-								channels[chan].finePeriodDelta = -note.extEffectParameter;
+								channel.finePeriodDelta = -note.extEffectParameter;
 								break;
 							case 0x02: /* fine pitch slide down - E2x */
-								channels[chan].finePeriodDelta = note.extEffectParameter;
+								channel.finePeriodDelta = note.extEffectParameter;
 								break;
 							case 0x05: /* set finetune - E5x */
-								channels[chan].finetune = note.extEffectParameter;
+								channel.finetune = note.extEffectParameter;
 								break;
 							case 0x0A: /* fine volume slide up - EAx */
-								channels[chan].fineVolumeDelta = note.extEffectParameter;
+								channel.fineVolumeDelta = note.extEffectParameter;
 								break;
 							case 0x0B: /* fine volume slide down - EBx */
-								channels[chan].fineVolumeDelta = -note.extEffectParameter;
+								channel.fineVolumeDelta = -note.extEffectParameter;
 								break;
 							case 0x0C: /* note cute - ECx */
-								channels[chan].cut = note.extEffectParameter;
+								channel.cut = note.extEffectParameter;
 								break;
 							case 0x0D: /* note delay - EDx */
-								channels[chan].delay = note.extEffectParameter;
+								channel.delay = note.extEffectParameter;
 								break;
 							case 0x06:
 								//set up loops only if they're new
@@ -301,117 +309,105 @@ function ModPlayer(mod, rate) {
 			}
 			
 			//for figuring out tone portamento effect
-			if (note.period != 0) { channels[chan].prevNote = note; }
+			if (note.period != 0) { channel.prevNote = note; }
 			
-			if (channels[chan].tonePortaActive == false) {
-				channels[chan].tonePortaDelta = 0;
-				channels[chan].tonePortaTarget = 0;
-				channels[chan].tonePortaVolStep = 0;
+			if (channel.tonePortaActive == false) {
+				channel.tonePortaDelta = 0;
+				channel.tonePortaTarget = 0;
+				channel.tonePortaVolStep = 0;
 			}
-		}
-
-		//if we're already looping then decrement count when we hit the end
-		//console.log("LOOP", exLoop, exLoopCount, exLoopStart, exLoopEnd);
-		if (exLoop && exLoopCount > 0) {
-			if (currentRow == exLoopEnd) {
-				exLoopCount--;
-				currentRow = exLoopStart;
-				loadPosition(currentPosition);
-			}
-		} else {
-			//turn off the loop once it counts down
-			exLoop = false;
-			exLoopCount = 0;
 		}
 		
 	}
 	
-	function loadPattern(patternNumber, row) {
-		if (row === undefined) { row = 0; }
+	function loadPattern(patternNumber) {
+		//console.log("loading pattern", patternNumber);
+		var row = doBreak ? breakRow : 0;
 		currentPattern = mod.patterns[patternNumber];
 		loadRow(row);
 	}
 	
-	function loadPosition(positionNumber, row) {
-		if (row === undefined) { row = 0; }
+	function loadPosition(positionNumber) {
+		//console.log("loading position");
 		currentPosition = positionNumber;
-		loadPattern(mod.positions[currentPosition], row);
+		loadPattern(mod.positions[currentPosition]);
 	}
 	
 	loadPosition(0);
+	
+	function getNextPosition() {
+		if (currentPosition + 1 == mod.positionCount) {
+			loadPosition(mod.positionLoopPoint);
+		} else {
+			loadPosition(currentPosition + 1);
+		}
+	}
+	
+	function getNextRow() {
+		//console.log("getnextrow()", currentRow);
+		if (doBreak) {
+			loadPosition(breakPos);
+		} else {
+			if (currentRow == 63) {
+				getNextPosition();
+			} else {
+				loadRow(currentRow + 1);
+			}
+		}
+	}
 	
 	function doFrame() {
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 
 		for (var chan = 0; chan < mod.channelCount; chan++) {
-			var finetune = channels[chan].finetune;
+			var channel = channels[chan];
+			var finetune = channel.finetune;
 			if (currentFrame == 0) { /* apply fine slides only once */
-				channels[chan].ticksPerSample += channels[chan].finePeriodDelta * 2;
-				channels[chan].volume += channels[chan].fineVolumeDelta;
+				channel.ticksPerSample += channel.finePeriodDelta * 2;
+				channel.volume += channel.fineVolumeDelta;
 			}
-			channels[chan].volume += channels[chan].volumeDelta;
-			if (channels[chan].volume > 64) {
-				channels[chan].volume = 64;
-			} else if (channels[chan].volume < 0) {
-				channels[chan].volume = 0;
+			channel.volume += channel.volumeDelta;
+			if (channel.volume > 64) {
+				channel.volume = 64;
+			} else if (channel.volume < 0) {
+				channel.volume = 0;
 			}
-			if (channels[chan].cut !== false && currentFrame >= channels[chan].cut) {
-				channels[chan].volume = 0;
+			if (channel.cut !== false && currentFrame >= channel.cut) {
+				channel.volume = 0;
 			}
-			if (channels[chan].delay !== false && currentFrame <= channels[chan].delay) {
-				channels[chan].volume = 0;
+			if (channel.delay !== false && currentFrame <= channel.delay) {
+				channel.volume = 0;
 			}
-			channels[chan].ticksPerSample += channels[chan].periodDelta * 2;
-			if (channels[chan].tonePortaActive) {
-				//console.log(channels[chan].tonePortaTarget, channels[chan].ticksPerSample, channels[chan].tonePortaTarget * 2);
-				channels[chan].ticksPerSample += channels[chan].tonePortaDelta * 2;
-				if (channels[chan].ticksPerSample > channels[chan].tonePortaTarget * 2) { //don't slide above the allowed note
-					channels[chan].ticksPerSample = channels[chan].tonePortaTarget * 2;
+			channel.ticksPerSample += channel.periodDelta * 2;
+			if (channel.tonePortaActive) {
+				channel.ticksPerSample += channel.tonePortaDelta * 2;
+				//don't slide below or above allowed note, depending on slide direction
+				if (channel.tonePortaDir == 1 && channel.ticksPerSample > channel.tonePortaTarget * 2) {
+					channel.ticksPerSample = channel.tonePortaTarget * 2;
+				} else if (channel.tonePortaDir == -1 && channel.ticksPerSample < channel.tonePortaTarget * 2)  {
+					channel.ticksPerSample = channel.tonePortaTarget * 2;
 				}
 			}
 			
-			if (channels[chan].ticksPerSample > 4096) {
-				channels[chan].ticksPerSample = 4096;
-			} else if (channels[chan].ticksPerSample < 96) { /* equivalent to period 48, a bit higher than the highest note */
-				channels[chan].ticksPerSample = 96;
+			if (channel.ticksPerSample > 4096) {
+				channel.ticksPerSample = 4096;
+			} else if (channel.ticksPerSample < 96) { /* equivalent to period 48, a bit higher than the highest note */
+				channel.ticksPerSample = 96;
 			}
-			if (channels[chan].arpeggioActive) {
-				channels[chan].arpeggioCounter++;
-				var noteNumber = channels[chan].arpeggioNotes[channels[chan].arpeggioCounter % 3];
-				channels[chan].ticksPerSample = ModPeriodTable[finetune][noteNumber] * 2;
+			if (channel.arpeggioActive) {
+				channel.arpeggioCounter++;
+				var noteNumber = channel.arpeggioNotes[channel.arpeggioCounter % 3];
+				channel.ticksPerSample = ModPeriodTable[finetune][noteNumber] * 2;
 			}
 		}
 
 		currentFrame++;
-
-		//if we completed all the ticks, check whether we move on in the mod
 		if (currentFrame == framesPerRow) {
-			currentPosition++;
-			//jump bypasses other logic
-			if (jump) {
-				currentPosition = jumpFrame;
-				currentRow = jumpRow;
-				loadPosition(currentPosition);
-				jump = false;
-				jumpFrame = 0;
-				jumpRow = 0;
-			} else {
-				//end of pattern. go to next
-				if (currentRow >= 63) {
-					if (currentPosition >= mod.positionCount) {
-						loadPosition(mod.positionLoopPoint);
-						loadRow(0);
-					} else {
-						loadPosition(currentPosition);
-						loadRow(0);
-					}
-				} else {
-					//not end of pattern yet, just keep moving
-					loadRow(currentRow + 1);
-				}
-			}
+			getNextRow();
 		}
+
+
 	}
 	
 	this.getSamples = function(sampleCount) {
@@ -427,22 +423,23 @@ function ModPlayer(mod, rate) {
 			leftOutputLevel = 0;
 			rightOutputLevel = 0;
 			for (var chan = 0; chan < mod.channelCount; chan++) {
-				if (channels[chan].playing) {
-					channels[chan].ticksSinceStartOfSample += ticksPerOutputSample;
-					while (channels[chan].ticksSinceStartOfSample >= channels[chan].ticksPerSample) {
-						channels[chan].samplePosition++;
-						if (channels[chan].sample.repeatLength > 2 && channels[chan].samplePosition >= channels[chan].sample.repeatOffset + channels[chan].sample.repeatLength) {
-							channels[chan].samplePosition = channels[chan].sample.repeatOffset;
-						} else if (channels[chan].samplePosition >= channels[chan].sample.length) {
-							channels[chan].playing = false;
+				var channel = channels[chan];
+				if (channel.playing) {
+					channel.ticksSinceStartOfSample += ticksPerOutputSample;
+					while (channel.ticksSinceStartOfSample >= channel.ticksPerSample) {
+						channel.samplePosition++;
+						if (channel.sample.repeatLength > 2 && channel.samplePosition >= channel.sample.repeatOffset + channel.sample.repeatLength) {
+							channel.samplePosition = channel.sample.repeatOffset;
+						} else if (channel.samplePosition >= channel.sample.length) {
+							channel.playing = false;
 							break;
 						} else 
-						channels[chan].ticksSinceStartOfSample -= channels[chan].ticksPerSample;
+						channel.ticksSinceStartOfSample -= channel.ticksPerSample;
 					}
-					if (channels[chan].playing) {
-						var rawVol = mod.data.charCodeAt(channels[chan].sample.startOffset + channels[chan].samplePosition);
-						var vol = (((rawVol + 128) & 0xff) - 128) * channels[chan].volume; /* range (-128*64)..(127*64) */
-						if (chan & 3 == 0 || chan & 3 == 3) {
+					if (channel.playing) {
+						var rawVol = mod.data.charCodeAt(channel.sample.startOffset + channel.samplePosition);
+						var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
+						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning: left, right, right, left */
 							leftOutputLevel += vol * 3
 							rightOutputLevel += vol
 						} else {
