@@ -245,8 +245,9 @@ function ModPlayer(mod, rate) {
 						}
 						break;
 					case 0x0B: /* jump to order */
-						jump = true;
-						jumpFrame = note.effectParameter;
+						doBreak = true;
+						breakPos = note.effectParameter;
+						breakRow = 0;
 						break;
 					case 0x0C: /* volume */
 						if (note.effectParameter > 64) {

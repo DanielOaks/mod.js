@@ -6,10 +6,11 @@ Effects implemented:
 2xx: Pitch slide down
 3xx: Portamento to note [slightly buggy]
 5xy: Portamento to note with volume slide [untested]
-9xx Sample offset
+9xx: Sample offset
 Axy: Volume slide
+Bxx: Jump to order
 Cxx: Set note volume
-Dxx Pattern break
+Dxx: Pattern break
 Fxx: Set BPM
 Exy Subcommands:
 	E1x Fine portamento up
@@ -27,7 +28,6 @@ In progress:
 4xy Vibrato
 6xy Vibrato with volume slide
 8xx Set note panning position
-Bxx Jump to order [buggy]
 Exy Subcommands:
 	E6x Pattern loop
 	EEx Pattern delay
