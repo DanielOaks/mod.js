@@ -142,6 +142,7 @@ function ModPlayer(mod, rate) {
 			sample: mod.samples[0],
 			finetune: 0,
 			volume: 0,
+			pan: 0x7F,	//unimplemented
 			volumeDelta: 0,
 			periodDelta: 0,
 			fineVolumeDelta: 0,
@@ -162,6 +163,7 @@ function ModPlayer(mod, rate) {
 		doBreak = false;
 		breakPos = 0;
 		breakRow = 0;
+		
 		for (var chan = 0; chan < mod.channelCount; chan++) {
 			//console.log("Processing channel", chan, " row ", currentRow);
 			var channel = channels[chan];
@@ -191,6 +193,7 @@ function ModPlayer(mod, rate) {
 			channel.fineVolumeDelta = 0;
 			channel.cut = false;
 			channel.delay = false;
+			channel.retrigger = false;
 			channel.tonePortaActive = false;
 			if (note.effect != 0 || note.effectParameter != 0) {
 				channel.volumeDelta = 0; /* new effects cancel volumeDelta */
@@ -229,6 +232,9 @@ function ModPlayer(mod, rate) {
 						}
 						channel.tonePortaDelta = channel.tonePortaVolStep;
 						break;
+					case 0x09: /* sample offset - 9xx */
+						channel.samplePosition = 256 * note.effectParameter;
+						break;
 					case 0x0A: /* volume slide - Axy */
 						if (note.effectParameter & 0xf0) {
 							/* volume increase by x */
@@ -266,6 +272,9 @@ function ModPlayer(mod, rate) {
 								break;
 							case 0x05: /* set finetune - E5x */
 								channel.finetune = note.extEffectParameter;
+								break;
+							case 0x09: /* retrigger sample - E9x */
+								channel.retrigger = note.extEffectParameter;
 								break;
 							case 0x0A: /* fine volume slide up - EAx */
 								channel.fineVolumeDelta = note.extEffectParameter;
@@ -379,6 +388,12 @@ function ModPlayer(mod, rate) {
 			if (channel.delay !== false && currentFrame <= channel.delay) {
 				channel.volume = 0;
 			}
+			if (channel.retrigger !== false) {
+				//short-circuit prevents x mod 0
+				if (channel.retrigger == 0 || currentFrame % channel.retrigger == 0) { 
+					channel.samplePosition = 0;
+				}
+			}
 			channel.ticksPerSample += channel.periodDelta * 2;
 			if (channel.tonePortaActive) {
 				channel.ticksPerSample += channel.tonePortaDelta * 2;
@@ -439,12 +454,12 @@ function ModPlayer(mod, rate) {
 					if (channel.playing) {
 						var rawVol = mod.data.charCodeAt(channel.sample.startOffset + channel.samplePosition);
 						var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
-						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning: left, right, right, left */
-							leftOutputLevel += vol * 3
-							rightOutputLevel += vol
+						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */
+							leftOutputLevel += (vol + channel.pan) * 3;
+							rightOutputLevel += (vol + 0xFF - channel.pan);
 						} else {
-							leftOutputLevel += vol
-							rightOutputLevel += vol * 3
+							leftOutputLevel += (vol + 0xFF - channel.pan)
+							rightOutputLevel += (vol + channel.pan) * 3;
 						}
 						/* range of outputlevels is 128*64*2*channelCount */
 						/* (well, it could be more for odd channel counts) */
