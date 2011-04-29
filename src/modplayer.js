@@ -128,12 +128,13 @@ function ModPlayer(mod, rate) {
 	var exLoopStart = 0;	//loop point set up by E60
 	var exLoopEnd = 0;		//end of loop (where we hit a E6x cmd) for accurate counting
 	var exLoopCount = 0;	//loops remaining
-	var jump = false;	//whether we hit a jump command like Bxx, Dxx
+	var jump = false;		//whether we hit a jump command like Bxx, Dxx
 	var jumpFrame = 0;
 	var jumpRow = 0;
 	var doBreak = false;
 	var	breakPos = 0;
 	var	breakRow = 0;
+	var delayRows = false; //EEx pattern delay.
 	
 	var channels = [];
 	for (var chan = 0; chan < mod.channelCount; chan++) {
@@ -163,7 +164,7 @@ function ModPlayer(mod, rate) {
 		doBreak = false;
 		breakPos = 0;
 		breakRow = 0;
-		
+
 		for (var chan = 0; chan < mod.channelCount; chan++) {
 			//console.log("Processing channel", chan, " row ", currentRow);
 			var channel = channels[chan];
@@ -288,6 +289,10 @@ function ModPlayer(mod, rate) {
 								break;
 							case 0x0D: /* note delay - EDx */
 								channel.delay = note.extEffectParameter;
+								break;
+							case 0x0E: /* pattern delay EEx */
+								delayRows = note.extEffectParameter;
+								console.log("row delay", delayRows);
 								break;
 							case 0x06:
 								//set up loops only if they're new
@@ -420,7 +425,14 @@ function ModPlayer(mod, rate) {
 
 		currentFrame++;
 		if (currentFrame == framesPerRow) {
-			getNextRow();
+			currentFrame = 0;
+			if (delayRows !== false) {
+				delayRows--;
+				if (delayRows < 0) { delayRows = false; }
+			} else {
+				getNextRow();
+			}
+
 		}
 
 

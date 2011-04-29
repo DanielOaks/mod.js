@@ -21,6 +21,7 @@ Exy Subcommands:
 	EBx Fine volume slide down
 	ECx Note cut
 	EDx Note delay
+	EEx Pattern delay
 
 
 In progress:
@@ -30,7 +31,6 @@ In progress:
 8xx Set note panning position
 Exy Subcommands:
 	E6x Pattern loop
-	EEx Pattern delay
 
 
 Not implemented:
