@@ -128,10 +128,7 @@ function ModPlayer(mod, rate) {
 	var exLoopStart = 0;	//loop point set up by E60
 	var exLoopEnd = 0;		//end of loop (where we hit a E6x cmd) for accurate counting
 	var exLoopCount = 0;	//loops remaining
-	var jump = false;		//whether we hit a jump command like Bxx, Dxx
-	var jumpFrame = 0;
-	var jumpRow = 0;
-	var doBreak = false;
+	var doBreak = false;	//Bxx, Dxx - jump to order and pattern break
 	var	breakPos = 0;
 	var	breakRow = 0;
 	var delayRows = false; //EEx pattern delay.
@@ -292,18 +289,17 @@ function ModPlayer(mod, rate) {
 								break;
 							case 0x0E: /* pattern delay EEx */
 								delayRows = note.extEffectParameter;
-								console.log("row delay", delayRows);
 								break;
 							case 0x06:
-								//set up loops only if they're new
-								if (!exLoop) {
-									//set loop start with E60
-									if (note.extEffectParameter == 0) {
+								//set loop start with E60
+								if (note.extEffectParameter == 0) {
+									exLoopStart = currentRow;
+								} else {
+									//set loop end with E6x
+									exLoopEnd = currentRow;
+									//activate the loop only if it's new
+									if (!exLoop) {
 										exLoop = true;
-										exLoopStart = currentRow;
-									} else {
-										//set loop end with E6x
-										exLoopEnd = currentRow;
 										exLoopCount = note.extEffectParameter;
 									}
 								}
@@ -359,9 +355,20 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function getNextRow() {
-		//console.log("getnextrow()", currentRow);
+		console.log(exLoop, currentRow, exLoopEnd, exLoopCount);
+		/*
+			Determine where we're gonna go based on active effect.
+			Either:
+				break (jump to new pattern),
+				do extended loop,
+				advance normally
+		*/
 		if (doBreak) {
 			loadPosition(breakPos);
+		} else if (exLoop && currentRow == exLoopEnd && exLoopCount > 0) {
+			//count down the loop and jump back
+			loadRow(exLoopStart);
+			exLoopCount--;
 		} else {
 			if (currentRow == 63) {
 				getNextPosition();
@@ -369,6 +376,9 @@ function ModPlayer(mod, rate) {
 				loadRow(currentRow + 1);
 			}
 		}
+		
+		if (exLoopCount < 0) { exLoop = false; }
+
 	}
 	
 	function doFrame() {
@@ -426,6 +436,7 @@ function ModPlayer(mod, rate) {
 		currentFrame++;
 		if (currentFrame == framesPerRow) {
 			currentFrame = 0;
+			//Don't advance to reading more rows if pattern delay effect is active
 			if (delayRows !== false) {
 				delayRows--;
 				if (delayRows < 0) { delayRows = false; }

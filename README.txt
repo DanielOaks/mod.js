@@ -16,6 +16,7 @@ Exy Subcommands:
 	E1x Fine portamento up
 	E2x Fine portamento down
 	E5x Set note fine-tune [untested]
+	E6x Pattern loop
 	E9x Re-trigger note
 	EAx Fine volume slide up
 	EBx Fine volume slide down
@@ -28,20 +29,20 @@ In progress:
 
 4xy Vibrato
 6xy Vibrato with volume slide
+7xy Tremolo
 8xx Set note panning position
 Exy Subcommands:
-	E6x Pattern loop
+	E8x Set note panning position
+
 
 
 Not implemented:
 
-7xy Tremolo
 Exy Subcommands:
 	E0x Amiga LED Filter toggle
 	E3x Glissando control
 	E4x Vibrato control
 	E7x Tremolo control
-	E8x Set note panning position
 	EFx Funk it!
 
 http://www.milkytracker.org/docs/MilkyTracker.html#effects
