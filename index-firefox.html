@@ -4,6 +4,7 @@
 		<script src="src/modfile.js"></script>
 		<script src="src/xmfile.js"></script>
 		<script src="src/modplayer.js"></script>
+		<script src="src/support.js"></script>
 		<style>
 			p { margin-top: 8px; margin-bottom: 8px}
 		</style>
@@ -63,7 +64,6 @@
 						theFile = e.target.result; /* get the data string out of the blob object */
 						var modFile = new ModFile(theFile);
 						modPlayer = new ModPlayer(modFile, 44100);
-						//console.log(new XMFile(theFile));
 						play();
 						document.getElementById('status').innerText = '';
 					};
@@ -123,8 +123,8 @@
 			<li><a href="javascript:loadRemote('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
 			<li><a href="javascript:loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
 			<!-- These are benchmark modules. Not for public consumption....yet :) -->
-			<!--<li><a href="javascript:loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
-			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>-->
+			<!--<li><a href="javascript:loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>-->
+			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
 			<li>From harddrive: <input type="file" id="input" multiple="true" onchange="loadLocal(this.files[0])"></li>
 		</ul>
 		<div id="status">Not started</div>

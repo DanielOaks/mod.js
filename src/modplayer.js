@@ -163,7 +163,6 @@ function ModPlayer(mod, rate) {
 		breakRow = 0;
 
 		for (var chan = 0; chan < mod.channelCount; chan++) {
-			//console.log("Processing channel", chan, " row ", currentRow);
 			var channel = channels[chan];
 			var prevNote = channel.prevNote;
 			var note = currentPattern[currentRow][chan];
@@ -173,6 +172,7 @@ function ModPlayer(mod, rate) {
 				channel.ticksSinceStartOfSample = 0; /* that's 'sample' as in 'individual volume reading' */
 				if (note.sample != 0) {
 					channel.sample = mod.samples[note.sample - 1];
+					channel.instrumentNum = note.sample - 1;	//for mod, instrument # is just sample #
 					channel.volume = channel.sample.volume;
 					channel.finetune = channel.sample.finetune;
 				}
@@ -332,7 +332,6 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function loadPattern(patternNumber) {
-		//console.log("loading pattern", patternNumber);
 		var row = doBreak ? breakRow : 0;
 		currentPattern = mod.patterns[patternNumber];
 		loadRow(row);
@@ -384,12 +383,6 @@ function ModPlayer(mod, rate) {
 	}
 
 	function doFrame() {
-		status.innerHTML =
-			"Current: " + currentPosition.toString(16) + " " +
-			"Count: " + (mod.positionCount).toString(16) + " " +
-			"Loop point: " + mod.positionLoopPoint.toString(16) + " " +
-			(mod.positionLoopPoint > mod.positionCount - 1) + " " +
-			(currentPosition + 1 >= mod.positionCount)
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 
@@ -483,7 +476,8 @@ function ModPlayer(mod, rate) {
 						channel.ticksSinceStartOfSample -= channel.ticksPerSample;
 					}
 					if (channel.playing) {
-						var rawVol = mod.data.charCodeAt(channel.sample.startOffset + channel.samplePosition);
+						
+						var rawVol = mod.sampleData[channel.instrumentNum][channel.samplePosition];
 						var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
 						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */
 							leftOutputLevel += (vol + channel.pan) * 3;
