@@ -114,11 +114,8 @@ function XMFile(mod) {
 					effect: effByte,
 					effectParameter: effParamByte
 				}
-				
-				//console.log(noteByte, instrByte, volByte, effByte, effParamByte);
 			}
 		}
-
 	}
 
 

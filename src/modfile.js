@@ -16,7 +16,7 @@ function ModFile(mod) {
 		return (str.charCodeAt(pos) << 8) + str.charCodeAt(pos+1)
 	}
 
-	//this.data = mod;
+	this.data = mod;
 	this.samples = [];
 	this.positions = [];
 	this.patternCount = 0;

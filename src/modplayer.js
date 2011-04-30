@@ -348,9 +348,13 @@ function ModPlayer(mod, rate) {
 	
 	function getNextPosition() {
 		if (currentPosition + 1 == mod.positionCount) {
-			/*framesPerRow = 6;
-			setBPM(125);*/
-			loadPosition(mod.positionLoopPoint);
+			//Loop back to start INSTEAD of loop point, if set loop point is invalid
+			//"Why not just change it"? Don't tamper with data, so we can re-save later
+			if (mod.positionLoopPoint > mod.positionCount - 1) {
+				loadPosition(0);
+			} else {
+				loadPosition(mod.positionLoopPoint);
+			}
 		} else {
 			loadPosition(currentPosition + 1);
 		}
@@ -365,6 +369,9 @@ function ModPlayer(mod, rate) {
 				advance normally
 		*/
 		if (doBreak) {
+			//Dxx commands at the end of modules are fairly common for some reason
+			//so make sure jumping past the end loops back to the start
+			breakPos = (breakPos >= mod.positionCount) ? mod.positionLoopPoint : breakPos;
 			loadPosition(breakPos);
 		} else if (exLoop && currentRow == exLoopEnd && exLoopCount > 0) {
 			//count down the loop and jump back
@@ -383,6 +390,10 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function doFrame() {
+		status.innerHTML =
+			"Current: " + currentPosition.toString(16) + " " +
+			"Highest: " + (mod.positionCount - 1).toString(16) + " " +
+			"Loop point: " + mod.positionLoopPoint.toString(16);
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 
@@ -444,7 +455,6 @@ function ModPlayer(mod, rate) {
 			} else {
 				getNextRow();
 			}
-
 		}
 
 
