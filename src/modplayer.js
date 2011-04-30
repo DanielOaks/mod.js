@@ -339,7 +339,8 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function loadPosition(positionNumber) {
-		//console.log("loading position");
+		//Handle invalid position numbers that may be passed by invalid loop points
+		positionNumber = (positionNumber > mod.positionCount - 1) ? 0 : positionNumber;	
 		currentPosition = positionNumber;
 		loadPattern(mod.positions[currentPosition]);
 	}
@@ -347,14 +348,8 @@ function ModPlayer(mod, rate) {
 	loadPosition(0);
 	
 	function getNextPosition() {
-		if (currentPosition + 1 == mod.positionCount) {
-			//Loop back to start INSTEAD of loop point, if set loop point is invalid
-			//"Why not just change it"? Don't tamper with data, so we can re-save later
-			if (mod.positionLoopPoint > mod.positionCount - 1) {
-				loadPosition(0);
-			} else {
-				loadPosition(mod.positionLoopPoint);
-			}
+		if (currentPosition + 1 >= mod.positionCount) {
+			loadPosition(mod.positionLoopPoint);
 		} else {
 			loadPosition(currentPosition + 1);
 		}
@@ -386,14 +381,15 @@ function ModPlayer(mod, rate) {
 		}
 		
 		if (exLoopCount < 0) { exLoop = false; }
-
 	}
-	
+
 	function doFrame() {
 		status.innerHTML =
 			"Current: " + currentPosition.toString(16) + " " +
-			"Highest: " + (mod.positionCount - 1).toString(16) + " " +
-			"Loop point: " + mod.positionLoopPoint.toString(16);
+			"Count: " + (mod.positionCount).toString(16) + " " +
+			"Loop point: " + mod.positionLoopPoint.toString(16) + " " +
+			(mod.positionLoopPoint > mod.positionCount - 1) + " " +
+			(currentPosition + 1 >= mod.positionCount)
 		/* apply volume/pitch slide before fetching row, because the first frame of a row does NOT
 		have the slide applied */
 
