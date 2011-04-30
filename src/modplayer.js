@@ -348,6 +348,8 @@ function ModPlayer(mod, rate) {
 	
 	function getNextPosition() {
 		if (currentPosition + 1 == mod.positionCount) {
+			/*framesPerRow = 6;
+			setBPM(125);*/
 			loadPosition(mod.positionLoopPoint);
 		} else {
 			loadPosition(currentPosition + 1);
@@ -355,7 +357,6 @@ function ModPlayer(mod, rate) {
 	}
 	
 	function getNextRow() {
-		console.log(exLoop, currentRow, exLoopEnd, exLoopCount);
 		/*
 			Determine where we're gonna go based on active effect.
 			Either:

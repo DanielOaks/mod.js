@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<script src="src/modfile.js"></script>
+		<script src="src/xmfile.js"></script>
 		<script src="src/modplayer.js"></script>
 		<style>
 			p { margin-top: 8px; margin-bottom: 8px}
@@ -60,8 +61,9 @@
 					return function(e) {
 						/* actually load mod once we're passed the file data */
 						theFile = e.target.result; /* get the data string out of the blob object */
-						var modFile = new ModFile(theFile);
+						//var modFile = new ModFile(theFile);
 						modPlayer = new ModPlayer(modFile, 44100);
+						//console.log(new XMFile(theFile));
 						play();
 						document.getElementById('status').innerText = '';
 					};
