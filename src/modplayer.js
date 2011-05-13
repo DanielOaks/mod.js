@@ -145,6 +145,7 @@ function ModPlayer(mod, rate) {
 			periodDelta: 0,
 			fineVolumeDelta: 0,
 			finePeriodDelta: 0,
+			instrumentNum: 0,
 			tonePortaTarget: 0, //target for 3xx, 5xy as period value
 			tonePortaDelta: 0,
 			tonePortaVolStep: 0, //remember pitch slide step for when 5xx is used
@@ -166,17 +167,20 @@ function ModPlayer(mod, rate) {
 			var channel = channels[chan];
 			var prevNote = channel.prevNote;
 			var note = currentPattern[currentRow][chan];
-			if (note.period != 0 || note.sample != 0) {
+			if (mod.XM && note.noteNumber != 0) {
+				note.period = 10*12*16*4 - note.noteNumber *16*4 - channel.finetune / 2;
+			}
+			if (note.period != 0 || note.instrument != 0) {
 				channel.playing = true;
 				channel.samplePosition = 0;
 				channel.ticksSinceStartOfSample = 0; /* that's 'sample' as in 'individual volume reading' */
-				if (note.sample != 0) {
-					channel.sample = mod.samples[note.sample - 1];
-					channel.instrumentNum = note.sample - 1;	//for mod, instrument # is just sample #
+				if (note.instrument != 0) {
+					channel.sample = mod.samples[note.instrument];
+					channel.instrumentNum = note.instrument;	//for mod, instrument # is just sample #
 					channel.volume = channel.sample.volume;
 					channel.finetune = channel.sample.finetune;
 				}
-				if (note.period != 0) { // && note.effect != 0x03
+				if (!mod.XM && note.period != 0) { // && note.effect != 0x03
 					//the note specified in a tone porta command is not actually played
 					if (note.effect != 0x03) {
 						channel.noteNumber = ModPeriodToNoteNumber[note.period];
@@ -476,7 +480,7 @@ function ModPlayer(mod, rate) {
 						channel.ticksSinceStartOfSample -= channel.ticksPerSample;
 					}
 					if (channel.playing) {
-						
+
 						var rawVol = mod.sampleData[channel.instrumentNum][channel.samplePosition];
 						var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
 						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */

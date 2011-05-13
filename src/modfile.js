@@ -22,6 +22,7 @@ function ModFile(mod) {
 	this.positions = [];
 	this.patternCount = 0;
 	this.patterns = [];
+	this.XM = false;
 	
 	this.title = trimNulls(mod.substr(0, 20))
 
@@ -84,7 +85,7 @@ function ModFile(mod) {
 	var sampleOffset = patternOffset;
 	for (var s = 0; s < this.sampleCount; s++) {
 		this.samples[s].startOffset = sampleOffset;
-		this.sampleData[s] = TypedArray(this.samples[s].length, "uint8");
+		this.sampleData[s] = TypedArray(this.samples[s].length, "int8");
 		var i = 0;
 		for (var o = sampleOffset, e = sampleOffset + this.samples[s].length; o < e; o++) {
 			this.sampleData[s][i] = mod.charCodeAt(o);
@@ -92,5 +93,5 @@ function ModFile(mod) {
 		}
 		sampleOffset += this.samples[s].length;
 	}
-	
+
 }

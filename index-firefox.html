@@ -62,7 +62,8 @@
 					return function(e) {
 						/* actually load mod once we're passed the file data */
 						theFile = e.target.result; /* get the data string out of the blob object */
-						var modFile = new ModFile(theFile);
+						//var modFile = new ModFile(theFile);
+						var modFile = new XMFile(theFile);
 						modPlayer = new ModPlayer(modFile, 44100);
 						play();
 						document.getElementById('status').innerText = '';
