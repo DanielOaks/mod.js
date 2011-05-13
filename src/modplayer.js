@@ -166,13 +166,16 @@ function ModPlayer(mod, rate) {
 			var channel = channels[chan];
 			var prevNote = channel.prevNote;
 			var note = currentPattern[currentRow][chan];
+			if (channel.sampleNum == undefined) {
+					channel.sampleNum = 0;
+			}
 			if (note.period != 0 || note.sample != 0) {
 				channel.playing = true;
 				channel.samplePosition = 0;
 				channel.ticksSinceStartOfSample = 0; /* that's 'sample' as in 'individual volume reading' */
 				if (note.sample != 0) {
 					channel.sample = mod.samples[note.sample - 1];
-					channel.instrumentNum = note.sample - 1;	//for mod, instrument # is just sample #
+					channel.sampleNum = note.sample - 1;
 					channel.volume = channel.sample.volume;
 					channel.finetune = channel.sample.finetune;
 				}
@@ -477,7 +480,7 @@ function ModPlayer(mod, rate) {
 					}
 					if (channel.playing) {
 						
-						var rawVol = mod.sampleData[channel.instrumentNum][channel.samplePosition];
+						var rawVol = mod.sampleData[channel.sampleNum][channel.samplePosition];
 						var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
 						if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */
 							leftOutputLevel += (vol + channel.pan) * 3;
