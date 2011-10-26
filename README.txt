@@ -1,3 +1,4 @@
+Try it out on http://seanneilan.com/media/jsmodplayer/ !
 
 Effects implemented:
 
