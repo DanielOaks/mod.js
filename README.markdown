@@ -1,4 +1,8 @@
-Try it out on http://seanneilan.com/media/jsmodplayer/ !
+To build: `import mod.coffee mod.js`
+
+Demo: http://seanneilan.com/media/jsmodplayer/
+
+```
 
 Effects implemented:
 
@@ -46,12 +50,14 @@ Exy Subcommands:
 	E7x Tremolo control
 	EFx Funk it!
 
+```
+
 http://www.milkytracker.org/docs/MilkyTracker.html#effects
 
-==========================================================
+----------------------------------------------------------
 
 TODO:
 
-	- Implement additional effects. Try to pass the Ode to Protracker test :)
-	- Wean off dynamicaudio.js (eventually)
+* Implement additional effects. Try to pass the Ode to Protracker test :)
+* Wean off dynamicaudio.js (eventually)
 	
