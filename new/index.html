@@ -1,9 +1,10 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<script src="src/modfile.js"></script>
-		<script src="src/modplayer.js"></script>
+		<!--<script src="src/modfile.js"></script>
+		<script src="src/modplayer.js"></script>-->
 		<script src="src/swfobject.js"></script>
+		<script src="build.js"></script>
 		<script src="src/dynamicaudio.js"></script>
 		<style>
 			p { margin-top: 8px; margin-bottom: 8px}
@@ -22,7 +23,6 @@
 			var bufferLength = 44100 * 2 * bufferSeconds;
 			function play() {
 				playing = true;
-				dynamicAudio.write(modPlayer.getSamples(bufferLength));
 				bufferMoreData();
 			}
 			
@@ -84,10 +84,12 @@
 		</script>
 	</head>
 	<body onload="init()">
-		<h1>JSModPlayer</h1>
-		<h2>The imaginatively named Javascript .mod player by Gasman</h2>
+		<h1>mod.js</h1>
+		<p>Javascript .mod using Aurora.js (eventually).</p>
 		<p>This is a work in progress - not all effects are implemented yet.</p>
-		<p>(refresh the page to stop audio - no proper playback controls yet...)</p>
+		<p>Refresh the page to stop audio, or click 'Stop' and wait for a while - no working playback controls yet.</p>
+    <p><a href="javascript:play();">Play</a> | <a href="javascript:stop();">Stop</a></p>
+    <div id="status"></div>
 		<ul>
 			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
 			<li><a href="javascript:loadRemote('mods/dope.mod')">Dope / Onward Ride (Jugi / Complex)</a></li>
@@ -98,31 +100,8 @@
 			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
 			<li>From harddrive: <input type="file" id="input" multiple="true" onchange="loadLocal(this.files[0])"></li>
 		</ul>
-		<div id="status"></div>
 		<p>This is a work in progress - not all effects are implemented yet. Sound output is done with Ben Firshman's <a href="http://github.com/bfirsh/dynamicaudio.js">dynamicaudio.js</a> (using Firefox's audio data API, falling back on Flash if not available).</p>
-		<h3>Credits</h3>
-		<p>Original by Gasman.
-			<a href="http://twitter.com/westdotcodottt">@westdotcodottt</a> -
-			<a href="http://matt.west.co.tt/">matt.west.co.tt</a> -
-			<a href="mailto:gasman@raww.org">gasman@raww.org</a> - 22 May 2010
-		</p>
-		<p>Forked and improved by
-			<a href="http://billy.wenge-murphy.com/">Billy Wenge-Murphy</a> -
-			<a href="http://twitter.com/billywm">@BillyWM</a> -
-			<a href="mailto:iamthebilly@gmail.com">iamthebilly@gmail.com</a> - April 2011.
-			<p>Added local file loading (HTML5 File API), implemented more effects, fixes to playback</p>
-		</p>
-		<p>Forked and minor changes by
-			<a href="http://seanneilan.com/">Sean Neilan</a> -
-			<a href="http://twitter.com/wtfisseandoing">@wtfisseandoing</a> - October 26, 2011.
-			<p>Got it to work in latest versions of Chrome/Firefox. Put up demonstration on personal site.</p>
-		</p>
 
-
-		<p>Source code on Github:
-			<a href="http://github.com/gasman/jsmodplayer">Gasman</a> (original)
-			<a href="https://github.com/BillyWM/jsmodplayer">BillyWM</a> (fork)
-			<a href="https://github.com/sneilan/jsmodplayer">sneilan</a> (fork)
-		</p>
+		<p>Based on <a href="https://github.com/sneilan/jsmodplayer">jsmodplayer</a>.</p>
 	</body>
 </html>
