@@ -24,7 +24,7 @@
 			var bufferLength = 44100 * 2 * bufferSeconds;
 			function play() {
 				playing = true;
-				status('Playing');
+				status('<a href="javascript:pause();">Pause</a>');
 				bufferMoreData();
 			}
 			
@@ -37,11 +37,11 @@
 			
 			function pause() {
 				playing = false;
-				status('Paused');
+				status('<a href="javascript:play();">Play</a>');
 			}
 
 			function status(text) {
-				document.getElementById('status').innerHTML = "<b>Status</b>: " + text + ".";
+				document.getElementById('status').innerHTML = text;
 			}
 
 			function loadRemote(path) {
@@ -74,8 +74,7 @@
 		<h1>mod.js</h1>
 		<p>Javascript MOD player using Aurora.js (eventually).</p>
 		<p>This is a work in progress - not all effects are implemented yet.</p>
-		<p>Refresh the page to stop audio, or click 'Stop' and wait for a while - no working playback controls yet.</p>
-    <p><a href="javascript:play();">Play</a> | <a href="javascript:pause();">Pause</a></p>
+		<p>Refresh the page to stop audio immediately, the playback controls suck.</p>
     <div id="status"></div>
 		<ul>
 			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
