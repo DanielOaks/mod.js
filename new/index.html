@@ -16,6 +16,7 @@
 			
 			function init() {
 				dynamicAudio = new DynamicAudio({'swf': 'dynamicaudio.swf'});
+				status('Not playing');
 			}
 			
 			var playing = false;
@@ -23,6 +24,7 @@
 			var bufferLength = 44100 * 2 * bufferSeconds;
 			function play() {
 				playing = true;
+				status('Playing');
 				bufferMoreData();
 			}
 			
@@ -33,27 +35,13 @@
 				}
 			}
 			
-			function stop() {
+			function pause() {
 				playing = false;
+				status('Paused');
 			}
 
-			/* load from harddrive using HTML5 File API */
-			function loadLocal(file) {
-				var reader = new FileReader();
-				/* ugly-ass closure nonsense */
-				reader.onload = (function(theFile) {
-					return function(e) {
-						/* actually load mod once we're passed the file data */
-						theFile = e.target.result; /* get the data string out of the blob object */
-						var modFile = new ModFile(theFile);
-						modPlayer = new ModPlayer(modFile, 44100);
-						play();
-						document.getElementById('status').innerText = '';
-					};
-				})(file);
-
-				reader.readAsBinaryString(file);
-				document.getElementById('status').innerText = '';
+			function status(text) {
+				document.getElementById('status').innerHTML = "<b>Status</b>: " + text + ".";
 			}
 
 			function loadRemote(path) {
@@ -75,20 +63,19 @@
 						var modFile = new ModFile(binString);
 						modPlayer = new ModPlayer(modFile, 44100);
 						play();
-						document.getElementById('status').innerText = '';
 					}
 				}
-				document.getElementById('status').innerText = 'loading...';
+				status('Loading...');
 				fetch.send();
 			}
 		</script>
 	</head>
 	<body onload="init()">
 		<h1>mod.js</h1>
-		<p>Javascript .mod using Aurora.js (eventually).</p>
+		<p>Javascript MOD player using Aurora.js (eventually).</p>
 		<p>This is a work in progress - not all effects are implemented yet.</p>
 		<p>Refresh the page to stop audio, or click 'Stop' and wait for a while - no working playback controls yet.</p>
-    <p><a href="javascript:play();">Play</a> | <a href="javascript:stop();">Stop</a></p>
+    <p><a href="javascript:play();">Play</a> | <a href="javascript:pause();">Paused</a></p>
     <div id="status"></div>
 		<ul>
 			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
@@ -98,7 +85,6 @@
 			<li><a href="javascript:loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
 			<li><a href="javascript:loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
 			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
-			<li>From harddrive: <input type="file" id="input" multiple="true" onchange="loadLocal(this.files[0])"></li>
 		</ul>
 		<p>This is a work in progress - not all effects are implemented yet. Sound output is done with Ben Firshman's <a href="http://github.com/bfirsh/dynamicaudio.js">dynamicaudio.js</a> (using Firefox's audio data API, falling back on Flash if not available).</p>
 
