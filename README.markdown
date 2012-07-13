@@ -1,4 +1,4 @@
-To build: `import mod.coffee mod.js`
+To build: `import mod.js build.js`
 
 Demo: http://seanneilan.com/media/jsmodplayer/
 
