@@ -1,5 +1,5 @@
 class MODDemuxer extends Demuxer
-    Demuxer.registr(MODDemuxer)
+    Demuxer.register(MODDemuxer)
     
     # ...
 
