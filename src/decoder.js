@@ -1,5 +1,5 @@
 MODDecoder = Decoder.extend(function() {
-    Decoder.register('flac', this);
+    Decoder.register('mod', this);
 
     // ...
 });
