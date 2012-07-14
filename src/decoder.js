@@ -63,6 +63,7 @@ MODDecoder = Decoder.extend(function() {
         this.patternCount = 0;
         this.patterns = [];
         this.channelCount = 0;
+        this.title = undefined;
     }
 
     this.prototype.getSample = function(str) {
@@ -73,6 +74,7 @@ MODDecoder = Decoder.extend(function() {
             sampleName = trimNulls(sampleInfo.substr(0, 22));
 
         return {
+            name: sampleName,
             length: getWord(sampleInfo, 22) * 2,
             finetune: sampleInfo.charCodeAt(24),
             volume: sampleInfo.charCodeAt(25),
@@ -82,11 +84,10 @@ MODDecoder = Decoder.extend(function() {
     }
 
     this.prototype.readPositionData = function() {
-        var data = this.stream.readString(130);
-        this.positionCount = data.charCodeAt(0);
-        this.positionLoopPoint = data.charCodeAt(1);
+        this.positionCount = this.stream.readUInt8();
+        this.positionLoopPoint = this.stream.readUInt8();
         for (var i = 0; i < 128; i++) {
-            this.positions[i] = data.charCodeAt(2+i);
+            this.positions[i] = this.stream.readUInt8();
             if (this.positions[i] >= this.patternCount) {
                 this.patternCount = this.positions[i]+1;
             }
@@ -103,12 +104,10 @@ MODDecoder = Decoder.extend(function() {
                 this.patterns[pat][row] = [];
 
                 for (var chan = 0; chan < this.channelCount; chan++) {
-//console.log("[decoder] \"pattern\" @ " + stream.offset);
-                    var pattern = this.stream.readString(4);
-                    b0 = pattern.charCodeAt(0);
-                    b1 = pattern.charCodeAt(1);
-                    b2 = pattern.charCodeAt(2);
-                    b3 = pattern.charCodeAt(3);
+                    b0 = this.stream.readUInt8();
+                    b1 = this.stream.readUInt8();
+                    b2 = this.stream.readUInt8();
+                    b3 = this.stream.readUInt8();
                     var eff = b2 & 0x0f;
                     this.patterns[pat][row][chan] = {
                         sample: (b0 & 0xf0) | (b2 >> 4),
@@ -127,17 +126,13 @@ MODDecoder = Decoder.extend(function() {
     }
 
     this.prototype.readSampleData = function() {
-        var offset = 0,
-            data   = undefined;
-
         for (var s = 0; s < this.sampleCount; s++) {
             console.log("[decoder] Sample data @ " + this.stream.offset);
-            offset = this.stream.offset;
-            this.samples[s].startOffset = offset;
+
+            this.samples[s].startOffset = this.stream.offset;
             this.sampleData[s] = new Uint8Array(this.samples[s].length, "uint8");
-            data = this.stream.readString(this.samples[s].length);
             for (var i = 0; i < this.samples[s].length; i++) {
-                this.sampleData[s][i] = data.charCodeAt(i);
+                this.sampleData[s][i] = this.stream.readUInt8();
             }
         }
     }
@@ -153,13 +148,15 @@ MODDecoder = Decoder.extend(function() {
             if (pos == 0) {
                 if (remaining < 20) break; // Need 20 bytes for title.
 
-                console.log("[decoder] Title");
-                stream.readString(20); // Ignore title. Caught from the Demuxer.
+                this.title = trimNulls(stream.readString(20));
+                console.log("[decoder] Title: " + this.title);
             } else if (this.isSample(pos)) {
+                var sample;
                 if (remaining < 30) break; // Need 30 bytes for sample.
 
-                console.log("[decoder] Sample @ " + pos);
-                this.samples[this.samples.length] = this.getSample();
+                sample = this.samples[this.samples.length] = this.getSample();
+                console.log("[decoder] Found sample @ " + pos + ", length: " + sample['length']);
+                console.log("          Name: " + sample['name']);
             } else if (pos == 950) {
                 this.readPositionData();
 
