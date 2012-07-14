@@ -27,8 +27,71 @@
  *
  */
 
+/*
+ * Notes:
+ * - The first 20 bytes of the file are *ALWAYS* taken by the demuxer, for the title.
+ */
+
 MODDecoder = Decoder.extend(function() {
     Decoder.register('mod', this);
 
-    // ...
+    // Remove null bytes from a string
+	function trimNulls(str) {
+		return str.replace(/\x00+$/, '');
+	}
+
+    // Get a word. Mmmmm, magic. Tastes like chicken.
+	function getWord(str, pos) {
+		return (str.charCodeAt(pos) << 8) + str.charCodeAt(pos+1)
+	}
+
+    var samplePositions = [];
+    for (var i = 0; i < 31; i ++) {
+        // This was previously 20 + i * 30, but the 20 bytes is snagged in the demuxer.
+        samplePositions[i] = i * 30;
+    }
+
+    function isSample(pos) {
+        for (var i = 0; i < samplePositions.length; i++) {
+            if (samplePositions[i] == pos)
+                return true;
+        }
+
+        return false;
+    }
+
+    this.prototype.init = function() {
+        this.data = undefined;
+        this.samples = [];
+        this.sampleData = [];
+        this.positions = [];
+        this.patternCount = 0;
+        this.patterns = [];
+    }
+
+    var sample_count = 31, // I think this varies, but for now we don't care.
+        channels     = 4;
+
+    function decodeSample(str) {
+        if (!stream.available(30))
+            return; // return if there isn't a full sample loaded.
+
+        var sampleInfo = stream.readString(30),
+            sampleName = trimNulls(sampleInfo.substr(0, 22)),
+            nextSample = this.samples.length;
+
+        this.samples[nextSample] = {
+            length: getWord(sampleInfo, 22) * 2,
+            finetune: sampleInfo.charCodeAt(24),
+            volume: sampleInfo.charCodeAt(25),
+            repeatOffset: getWord(sampleInfo, 26) * 2,
+            repeatLength: getWord(sampleInfo, 28) * 2,
+        }
+    }
+
+    this.prototype.readChunk = function() {
+        var stream = this.bitstream;
+
+        console.log(stream.offset, stream.remainingBytes());
+    }
 });
