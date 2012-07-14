@@ -91,7 +91,7 @@ MODDemuxer = Demuxer.extend(function() {
 
         this.emit('format', {
             formatID: 'mod',
-            sampleRate: '44100', // is this right?
+            sampleRate: 44100, // is this right?
             channelsPerFrame: MODDemuxer.channelCountByIdentifier[this.identifier],
             bitsPerChannel: 16   // is this right?
         });
