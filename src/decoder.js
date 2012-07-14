@@ -81,6 +81,67 @@ MODDecoder = Decoder.extend(function() {
         };
     }
 
+    this.prototype.readPositionData = function() {
+        var data = this.stream.readString(130);
+        this.positionCount = data.charCodeAt(0);
+        this.positionLoopPoint = data.charCodeAt(1);
+        for (var i = 0; i < 128; i++) {
+            this.positions[i] = data.charCodeAt(2+i);
+            if (this.positions[i] >= this.patternCount) {
+                this.patternCount = this.positions[i]+1;
+            }
+        }
+    }
+
+    this.prototype.readPatterns = function() {
+        var pattern = undefined;
+
+        for (var pat = 0; pat < this.patternCount; pat++) {
+            this.patterns[pat] = [];
+            console.log("[decoder] patterns[" + pat + "][0..64] @ " + this.stream.offset);
+            for (var row = 0; row < 64; row++) {
+                this.patterns[pat][row] = [];
+
+                for (var chan = 0; chan < this.channelCount; chan++) {
+//console.log("[decoder] \"pattern\" @ " + stream.offset);
+                    var pattern = this.stream.readString(4);
+                    b0 = pattern.charCodeAt(0);
+                    b1 = pattern.charCodeAt(1);
+                    b2 = pattern.charCodeAt(2);
+                    b3 = pattern.charCodeAt(3);
+                    var eff = b2 & 0x0f;
+                    this.patterns[pat][row][chan] = {
+                        sample: (b0 & 0xf0) | (b2 >> 4),
+                        period: ((b0 & 0x0f) << 8) | b1,
+                        effect: eff,
+                        effectParameter: b3
+                    };
+
+                    if (eff == 0x0E) {
+                        this.patterns[pat][row][chan].extEffect = (b3 & 0xF0) >> 4;
+                        this.patterns[pat][row][chan].extEffectParameter = (b3 & 0x0F);
+                    }
+                }
+            }
+        }
+    }
+
+    this.prototype.readSampleData = function() {
+        var offset = 0,
+            data   = undefined;
+
+        for (var s = 0; s < this.sampleCount; s++) {
+            console.log("[decoder] Sample data @ " + this.stream.offset);
+            offset = this.stream.offset;
+            this.samples[s].startOffset = offset;
+            this.sampleData[s] = new Uint8Array(this.samples[s].length, "uint8");
+            data = this.stream.readString(this.samples[s].length);
+            for (var i = 0; i < this.samples[s].length; i++) {
+                this.sampleData[s][i] = data.charCodeAt(i);
+            }
+        }
+    }
+
     this.prototype.readChunk = function() {
         var stream    = this.stream,
             pos       = 0,
@@ -100,69 +161,18 @@ MODDecoder = Decoder.extend(function() {
                 console.log("[decoder] Sample @ " + pos);
                 this.samples[this.samples.length] = this.getSample();
             } else if (pos == 950) {
-// Messy, messy, messy...
-    var data = stream.readString(130);
-	this.positionCount = data.charCodeAt(0);
-	this.positionLoopPoint = data.charCodeAt(1);
-	for (var i = 0; i < 128; i++) {
-		this.positions[i] = data.charCodeAt(2+i);
-		if (this.positions[i] >= this.patternCount) {
-			this.patternCount = this.positions[i]+1;
-		}
-	}
+                this.readPositionData();
 
-console.log(stream.offset)
+                var identifier = stream.readString(4);
 
-	var identifier = stream.readString(4);
-	
-	this.channelCount = MODDemuxer.channelCountByIdentifier[identifier];
-	if (!this.channelCount) {
-		this.channelCount = 4;
-	}
+                this.channelCount = MODDemuxer.channelCountByIdentifier[identifier];
+                if (!this.channelCount) {
+                    this.channelCount = 4;
+                }
 
+                this.readPatterns();
 
-	var pattern       = undefined;
-	for (var pat = 0; pat < this.patternCount; pat++) {
-		this.patterns[pat] = [];
-		for (var row = 0; row < 64; row++) {
-            console.log("[decoder] patterns[" + pat + "][" +  row + "] @ " + stream.offset);
-			this.patterns[pat][row] = [];
-			for (var chan = 0; chan < this.channelCount; chan++) {
-//console.log("[decoder] \"pattern\" @ " + stream.offset);
-                var pattern = stream.readString(4);
-				b0 = pattern.charCodeAt(0);
-				b1 = pattern.charCodeAt(1);
-				b2 = pattern.charCodeAt(2);
-				b3 = pattern.charCodeAt(3);
-				var eff = b2 & 0x0f;
-				this.patterns[pat][row][chan] = {
-					sample: (b0 & 0xf0) | (b2 >> 4),
-					period: ((b0 & 0x0f) << 8) | b1,
-					effect: eff,
-					effectParameter: b3
-				};
-				if (eff == 0x0E) {
-					this.patterns[pat][row][chan].extEffect = (b3 & 0xF0) >> 4;
-					this.patterns[pat][row][chan].extEffectParameter = (b3 & 0x0F);
-				}
-			}
-		}
-	}
-
-    var offset = 0,
-        data   = undefined;
-	for (var s = 0; s < this.sampleCount; s++) {
-console.log("[decoder] sample data @ " + stream.offset);
-        offset = stream.offset
-		this.samples[s].startOffset = offset;
-		this.sampleData[s] = new Uint8Array(this.samples[s].length, "uint8");
-        data = stream.readString(this.samples[s].length);
-		var i = 0;
-		for (var o = 0; o < this.samples[s].length; o++) {
-			this.sampleData[s][i] = data.charCodeAt(o);
-			i++;
-		}
-	}
+                this.readSampleData();
             } else {
                 console.log("[decoder] Found something @ " + pos);
                 console.log("[decoder] Remaining: " + remaining);
