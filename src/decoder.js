@@ -47,8 +47,7 @@ MODDecoder = Decoder.extend(function() {
 
     var samplePositions = [];
     for (var i = 0; i < 31; i ++) {
-        // This was previously 20 + i * 30, but the 20 bytes is snagged in the demuxer.
-        samplePositions[i] = i * 30;
+        samplePositions[i] = 20 + i * 30;
     }
 
     function isSample(pos) {
@@ -72,26 +71,49 @@ MODDecoder = Decoder.extend(function() {
     var sample_count = 31, // I think this varies, but for now we don't care.
         channels     = 4;
 
-    function decodeSample(str) {
-        if (!stream.available(30))
+    this.prototype.getSample = function(str) {
+        if (!this.stream.available(30))
             return; // return if there isn't a full sample loaded.
 
-        var sampleInfo = stream.readString(30),
-            sampleName = trimNulls(sampleInfo.substr(0, 22)),
-            nextSample = this.samples.length;
+        var sampleInfo = this.stream.readString(30),
+            sampleName = trimNulls(sampleInfo.substr(0, 22));
 
-        this.samples[nextSample] = {
+        return {
             length: getWord(sampleInfo, 22) * 2,
             finetune: sampleInfo.charCodeAt(24),
             volume: sampleInfo.charCodeAt(25),
             repeatOffset: getWord(sampleInfo, 26) * 2,
             repeatLength: getWord(sampleInfo, 28) * 2,
-        }
+        };
     }
 
     this.prototype.readChunk = function() {
-        var stream = this.bitstream;
+        var stream    = this.stream,
+            pos       = 0,
+            remaining = 0;
 
-        console.log(stream.offset, stream.remainingBytes());
+        while ((remaining = stream.remainingBytes()) > 0) {
+            pos = stream.offset;
+
+            if (pos == 0) {
+                if (remaining < 20) break; // Need 20 bytes for title.
+
+                console.log("[decoder] Title");
+                stream.readString(20); // Ignore title. Caught from the Demuxer.
+            } else if (isSample(pos)) {
+                if (remaining < 30) break; // Need 30 bytes for sample.
+
+                console.log("[decoder] Sample @ " + pos);
+                this.samples[this.samples.length] = this.getSample();
+            } else {
+                console.log("[decoder] Found something @ " + pos);
+                console.log("[decoder] Remaining: " + remaining);
+                break;
+            }
+        }
+
+        console.log("[decoder] Remaining: " + stream.remainingBytes());
+        this.once('available', this.readChunk);
+        //console.log(stream, stream.offset, stream.remainingBytes(), stream.list.availableBytes);
     }
 });

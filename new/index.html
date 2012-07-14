@@ -38,6 +38,10 @@
 						document.getElementById('title').innerText = metadata['title'];
 					}
   				});
+
+				player.on('error', function(error) {
+					document.getElementById('error').innerText = error;
+  				});
 			}
 		</script>
 
@@ -63,6 +67,7 @@
 			<p><strong id="title">&lt;unknown title&gt;</strong></p>
 			<p><span id="buffered">0</span>% buffered.</p>
 			<p><span id="played">0</span>% played.</p>
+			<p id="error"></p>
 		</div>
 		<ul>
 			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
