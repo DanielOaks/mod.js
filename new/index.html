@@ -1,40 +1,18 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<!--<script src="src/modfile.js"></script>
-		<script src="src/modplayer.js"></script>-->
-		<script src="src/swfobject.js"></script>
 		<script src="build.js"></script>
-		<script src="src/dynamicaudio.js"></script>
 		<style>
 			p { margin-top: 8px; margin-bottom: 8px}
 		</style>
 		
 		<script>
-			var modPlayer;
-			var dynamicAudio;
-			
-			function init() {
-				dynamicAudio = new DynamicAudio({'swf': 'dynamicaudio.swf'});
-				status('Not playing');
-			}
-			
-			var playing = false;
-			var bufferSeconds = 2; /* don't buffer too much or it will sputter doing the work */
-			var bufferLength = 44100 * 2 * bufferSeconds;
 			function play() {
 				playing = true;
 				status('<a href="javascript:pause();">Pause</a>');
 				bufferMoreData();
 			}
-			
-			function bufferMoreData() {
-				if (playing) {
-					dynamicAudio.write(modPlayer.getSamples(bufferLength));
-					setTimeout(bufferMoreData, 100);
-				}
-			}
-			
+
 			function pause() {
 				playing = false;
 				status('<a href="javascript:play();">Play</a>');
@@ -44,38 +22,26 @@
 				document.getElementById('status').innerHTML = text;
 			}
 
-			function loadRemote(path) {
-				var fetch = new XMLHttpRequest();
-				fetch.open('GET', path);
-				fetch.overrideMimeType("text/plain; charset=x-user-defined");
-				fetch.onreadystatechange = function() {
-					if(this.readyState == 4 && this.status == 200) {
-						/* munge response into a binary string */
-						var t = this.responseText || "" ;
-						var ff = [];
-						var mx = t.length;
-						var scc= String.fromCharCode;
-						for (var z = 0; z < mx; z++) {
-							ff[z] = scc(t.charCodeAt(z) & 255);
-						}
-						var binString = ff.join("");
-						
-						var modFile = new ModFile(binString);
-						modPlayer = new ModPlayer(modFile, 44100);
-						play();
-					}
-				}
-				status('Loading...');
-				fetch.send();
+			function loadRemote(file) {
+				player = Player.fromURL(file);
+				player.play();
+
+				player.on('buffer', function(percent) {
+					document.getElementById('buffered').innerText = percent.toString();
+				});
+
+				player.on('progress', function(percent) {
+				      document.getElementById('played').innerText = percent.toString();
+  				});
 			}
 		</script>
 	</head>
-	<body onload="init()">
+	<body>
 		<h1>mod.js</h1>
 		<p>Javascript MOD player using Aurora.js (eventually).</p>
 		<p>This is a work in progress - not all effects are implemented yet.</p>
 		<p>Refresh the page to stop audio immediately, the playback controls suck.</p>
-    <div id="status"></div>
+    <div id="status"><span id="buffered">0</span>% buffered; <span id="played">0</span>% played.</div>
 		<ul>
 			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
 			<li><a href="javascript:loadRemote('mods/dope.mod')">Dope / Onward Ride (Jugi / Complex)</a></li>

@@ -30,5 +30,81 @@
 MODDemuxer = Demuxer.extend(function() {
     Demuxer.register(this);
 
-    // ...
+    this.probe = function(buffer) {
+        /*
+         * As far as I know, there's nothing that signifies whether or not this
+         * is a MOD file, so we just assume it is and barf later if that's not
+         * actually the case.
+         */
+        return true;
+    }
+
+    // Remove null bytes from a string
+	function trimNulls(str) {
+		return str.replace(/\x00+$/, '');
+	}
+
+    // Get a word. Mmmmm, magic. Tastes like chicken.
+	function getWord(str, pos) {
+		return (str.charCodeAt(pos) << 8) + str.charCodeAt(pos+1)
+	}
+
+    var samplePositions = [];
+    for (var i = 0; i < 31; i ++) {
+        samplePositions[i] = 20 + i * 30;
+    }
+
+    function isSample(pos) {
+        for (var i = 0; i < samplePositions.length; i++) {
+            if (samplePositions[i] == pos)
+                return true;
+        }
+
+        return false;
+    }
+
+    this.prototype.init = function() {
+    	this.data = undefined;
+	    this.samples = [];
+    	this.sampleData = [];
+    	this.positions = [];
+    	this.patternCount = 0;
+    	this.patterns = [];
+
+    	this.title = '<no title found>';
+    }
+
+    var sample_count = 31, // I think this varies, but for now we don't care.
+        channels     = 4;
+
+    this.prototype.readChunk = function() {
+        var stream = this.stream,
+            pos    = stream.offset;
+
+        if (pos == 0) {
+            // The title is 20 bytes long, with all null bytes trimmed.
+            if (stream.available(20)) {
+                this.title = trimNulls(stream.readString(20));
+                console.log("Title @ " + pos + ": " + this.title);
+            }
+        } else if (isSample(pos)) {
+            if (!stream.available(30))
+                return; // return if there isn't a full sample loaded.
+
+            var sampleInfo = stream.readString(30),
+                sampleName = trimNulls(sampleInfo.substr(0, 22)),
+                nextSample = this.samples.length;
+
+            this.samples[nextSample] = {
+                length: getWord(sampleInfo, 22) * 2,
+                finetune: sampleInfo.charCodeAt(24),
+                volume: sampleInfo.charCodeAt(25),
+                repeatOffset: getWord(sampleInfo, 26) * 2,
+                repeatLength: getWord(sampleInfo, 28) * 2,
+            }
+            console.log("Sample @ " + pos + ": ", this.samples[nextSample]);
+        } else {
+            console.log("Not a sample @ " + pos + ".");
+        }
+    }
 });
