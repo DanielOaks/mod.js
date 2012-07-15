@@ -215,7 +215,6 @@ MODDecoder = Decoder.extend(function() {
         if (stream.offset >= 950) {
             var samples = this.getSamples();
 
-            console.log(stream.remainingBytes());
             this.emit('data', samples);
 
             return;

@@ -29,7 +29,21 @@
 				});
 
 				player.on('progress', function(percent) {
-					document.getElementById('played').innerText = Math.floor(percent).toString();
+					// Since there's no duration, I believe this is milliseconds.
+					var mins, sec, msec;
+					msec = Math.floor(percent),
+					secs = msec/1000;
+					mins = Math.floor(secs/60).toString();
+					secs = Math.floor(secs%60).toString();
+					if (secs.length < 2) {
+						secs = "0" + secs;
+					}
+
+					if (mins.length < 2) {
+						mins = "0" + mins;
+					}
+
+					document.getElementById('played').innerText = mins + ":" + secs;
 				});
 
 				player.on('metadata', function(metadata) {
@@ -67,7 +81,7 @@
 	    <div id="player">
 			<p><strong id="title">&lt;unknown title&gt;</strong></p>
 			<p><span id="buffered">0</span>% buffered.</p>
-			<p><span id="played">0</span>% played.</p>
+			<p><span id="played">00:00</span> played.</p>
 			<p id="error"></p>
 		</div>
 		<ul>
