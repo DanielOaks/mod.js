@@ -89,7 +89,7 @@ MODDecoder = Decoder.extend(function() {
 
         this.channels = [];
 
-        this.bufferSeconds = 2;
+        this.bufferSeconds = 1.5;
         this.bufferLength = this.rate * 2 * this.bufferSeconds;
 
         this.floatingPoint = true;
@@ -128,7 +128,7 @@ MODDecoder = Decoder.extend(function() {
 
         for (var pat = 0; pat < this.patternCount; pat++) {
             this.patterns[pat] = [];
-            console.log("[decoder] patterns[" + pat + "][0..64] @ " + this.stream.offset);
+            //console.log("[decoder] patterns[" + pat + "][0..64] @ " + this.stream.offset);
             for (var row = 0; row < 64; row++) {
                 this.patterns[pat][row] = [];
 
@@ -156,7 +156,7 @@ MODDecoder = Decoder.extend(function() {
 
     this.prototype.readSampleData = function() {
         for (var s = 0; s < this.sampleCount; s++) {
-            console.log("[decoder] Sample data @ " + this.stream.offset);
+            //console.log("[decoder] Sample data @ " + this.stream.offset);
 
             this.samples[s].startOffset = this.stream.offset;
             this.sampleData[s] = new Uint8Array(this.samples[s].length, "uint8");
@@ -175,8 +175,7 @@ MODDecoder = Decoder.extend(function() {
                 return this.once('available', this.readChunk);
             }
 
-            this.title = trimNulls(stream.readString(20));
-            console.log("[decoder] Title: " + this.title);
+            stream.advance(20);
         }
 
         while (this.isSample(stream.offset)) {
@@ -189,8 +188,8 @@ MODDecoder = Decoder.extend(function() {
             }
 
             sample = this.samples[this.samples.length] = this.getSample();
-            console.log("[decoder] Found sample @ " + pos + ", length: " + sample['length']);
-            console.log("          Name: " + sample['name']);
+            //console.log("[decoder] Found sample @ " + pos + ", length: " + sample['length']);
+            //console.log("          Name: " + sample['name']);
         }
 
         if (stream.offset == 950) {
@@ -222,8 +221,8 @@ MODDecoder = Decoder.extend(function() {
             this.emit('data', samples);
         }
 
-        console.log("[decoder] Offset:    " + stream.offset);
-        console.log("[decoder] Remaining: " + stream.remainingBytes());
+        //console.log("[decoder] Offset:    " + stream.offset);
+        //console.log("[decoder] Remaining: " + stream.remainingBytes());
     }
 
 

@@ -80,6 +80,8 @@ MODDemuxer = Demuxer.extend(function() {
             'title': title
         });
 
+        console.log("[demuxer] Title: " + this.title);
+
         // Store identifier if it's not already there.
         if (!('identifier' in this)) {
             this.identifier = this.getIdentifier(stream);
