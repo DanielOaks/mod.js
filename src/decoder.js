@@ -167,62 +167,63 @@ MODDecoder = Decoder.extend(function() {
     }
 
     this.prototype.readChunk = function() {
-        var stream    = this.stream,
-            pos       = 0,
-            remaining = 0;
+        var stream    = this.stream;
 
-        while ((remaining = stream.remainingBytes()) > 0) {
-            pos = stream.offset;
-
-            if (pos == 0) {
-                if (remaining < 20) break; // Need 20 bytes for title.
-
-                this.title = trimNulls(stream.readString(20));
-                console.log("[decoder] Title: " + this.title);
-            } else if (this.isSample(pos)) {
-                var sample;
-                if (remaining < 30) break; // Need 30 bytes for sample.
-
-                sample = this.samples[this.samples.length] = this.getSample();
-                console.log("[decoder] Found sample @ " + pos + ", length: " + sample['length']);
-                console.log("          Name: " + sample['name']);
-            } else if (pos == 950) {
-                this.readPositionData();
-
-                var identifier = stream.readString(4);
-
-                this.channelCount = MODDemuxer.channelCountByIdentifier[identifier];
-                if (!this.channelCount) {
-                    this.channelCount = 4;
-                }
-
-                this.readPatterns();
-
-                this.readSampleData();
-
-                // Play the audio!
-                this.setBpm(125);
-                this.setChannels();
-                this.loadPosition(0);
-            } else {
-                console.log("[decoder] Found something @ " + pos);
-                console.log("[decoder] Remaining: " + remaining);
-
-                break;
+        if (stream.offset == 0) {
+            // Need 20 bytes for title
+            if (stream.remainingBytes() < 20) {
+                return this.once('available', this.readChunk);
             }
+
+            this.title = trimNulls(stream.readString(20));
+            console.log("[decoder] Title: " + this.title);
         }
+
+        while (this.isSample(stream.offset)) {
+            var sample,
+                pos = stream.remainingBytes();
+
+            // Need 30 bytes for sample.
+            if (pos < 30) {
+                return this.once('available', this.readChunk);
+            }
+
+            sample = this.samples[this.samples.length] = this.getSample();
+            console.log("[decoder] Found sample @ " + pos + ", length: " + sample['length']);
+            console.log("          Name: " + sample['name']);
+        }
+
+        if (stream.offset == 950) {
+            this.readPositionData();
+
+            var identifier = stream.readString(4);
+
+            this.channelCount = MODDemuxer.channelCountByIdentifier[identifier];
+            if (!this.channelCount) {
+                this.channelCount = 4;
+            }
+
+            this.readPatterns();
+
+            this.readSampleData();
+
+            // Play the audio!
+            this.setBpm(125);
+            this.setChannels();
+            this.loadPosition(0);
+        }
+
+        //console.log("[decoder] Found something @ " + stream.offset);
+        //console.log("[decoder] Remaining: " + stream.remainingBytes());
 
         if (stream.offset >= 950) {
             var samples = this.getSamples();
 
             this.emit('data', samples);
-
-            return;
         }
 
+        console.log("[decoder] Offset:    " + stream.offset);
         console.log("[decoder] Remaining: " + stream.remainingBytes());
-        this.once('available', this.readChunk);
-        //console.log(stream, stream.offset, stream.remainingBytes(), stream.list.availableBytes);
     }
 
 

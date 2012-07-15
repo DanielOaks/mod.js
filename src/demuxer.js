@@ -60,7 +60,7 @@ MODDemuxer = Demuxer.extend(function() {
             pos    = stream.offset;
 
         if (pos > 0) {
-            console.log("Found more data @ " + pos);
+            console.log("[demuxer] Found more data @ " + pos);
             while (stream.available(1)) {
                 buf = stream.readSingleBuffer(stream.remainingBytes());
                 this.emit('data', buf);
@@ -69,7 +69,7 @@ MODDemuxer = Demuxer.extend(function() {
         }
 
         if (!stream.available(1084)) {
-            console.log("Only " + stream.remainingBytes() + " of required 1084 bytes available. Waiting.");
+            console.log("[demuxer] Only " + stream.remainingBytes() + " of required 1084 bytes available. Waiting.");
             this.once('available', this.readChunk);
             return;
         }
