@@ -504,14 +504,14 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
                             case 0x06:
                                 //set loop start with E60
                                 if (note.extEffectParameter == 0) {
-                                    exLoopStart = currentRow;
+                                    this.exLoopStart = this.currentRow;
                                 } else {
                                     //set loop end with E6x
-                                    exLoopEnd = currentRow;
+                                    this.exLoopEnd = this.currentRow;
                                     //activate the loop only if it's new
-                                    if (!exLoop) {
-                                        exLoop = true;
-                                        exLoopCount = note.extEffectParameter;
+                                    if (!this.exLoop) {
+                                        this.exLoop = true;
+                                        this.exLoopCount = note.extEffectParameter;
                                     }
                                 }
                                 break;
@@ -532,6 +532,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
 
             //for figuring out tone portamento effect
             if (note.period != 0) { channel.prevNote = note; }
+            // FIXME: channel.prevNote isn't always defined before it's needed. See Ode to Protracker.
 
             if (channel.tonePortaActive == false) {
                 channel.tonePortaDelta = 0;
