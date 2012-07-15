@@ -467,7 +467,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
                         break;
                     case 0x0D: /* pattern break; jump to next pattern at specified row */
                         doBreak = true;
-                        breakPos = currentPosition + 1;
+                        breakPos = this.currentPosition + 1;
                         //Row is written as DECIMAL so grab the high part as a single digit and do some math
                         breakRow = ((note.effectParameter & 0xF0) >> 4) * 10 + (note.effectParameter & 0x0F);
                         break;
