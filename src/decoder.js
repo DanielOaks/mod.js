@@ -58,7 +58,6 @@ MODDecoder = Decoder.extend(function() {
     this.prototype.init = function() {
         this.rate = 44100; // This was hard-coded in jsmodplayer, too.
 
-        this.data = undefined;
         this.samples = [];
         this.sampleData = [];
         this.positions = [];
@@ -89,6 +88,11 @@ MODDecoder = Decoder.extend(function() {
         this.delayRows = false; //EEx pattern delay.
 
         this.channels = [];
+
+        this.bufferSeconds = 5;
+        this.bufferLength = this.rate * 2 * this.bufferSeconds;
+
+        this.floatingPoint = true;
     }
 
     this.prototype.getSample = function(str) {
@@ -200,6 +204,7 @@ MODDecoder = Decoder.extend(function() {
                 this.setChannels();
                 this.setBpm(125);
                 this.loadPosition(0);
+                console.log(this.getSamples());
             } else {
                 console.log("[decoder] Found something @ " + pos);
                 console.log("[decoder] Remaining: " + remaining);
@@ -642,7 +647,10 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
     }
 
     this.prototype.getSamples = function(sampleCount) {
-        this.samples = [];
+        if (typeof sampleCount == "undefined")
+            sampleCount = this.bufferLength;
+
+        var samples = new Float32Array(sampleCount);
         var i = 0;
         while (i < sampleCount) {
             this.ticksSinceStartOfFrame += this.ticksPerOutputSample;
@@ -673,11 +681,11 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
                         var rawVol = this.sampleData[channel.sampleNum][channel.samplePosition];
                         var vol = (((this.rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
                         if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */
-                            leftOutputLevel += (vol + channel.pan) * 3;
-                            rightOutputLevel += (vol + 0xFF - channel.pan);
+                            this.leftOutputLevel += (vol + channel.pan) * 3;
+                            this.rightOutputLevel += (vol + 0xFF - channel.pan);
                         } else {
-                            leftOutputLevel += (vol + 0xFF - channel.pan)
-                            rightOutputLevel += (vol + channel.pan) * 3;
+                            this.leftOutputLevel += (vol + 0xFF - channel.pan)
+                            this.rightOutputLevel += (vol + channel.pan) * 3;
                         }
                         /* range of outputlevels is 128*64*2*channelCount */
                         /* (well, it could be more for odd channel counts) */
@@ -685,12 +693,14 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
                 }
             }
 
-            this.samples[i] = this.leftOutputLevel / (128 * 128 * this.channelCount);
-            this.samples[i+1] = this.rightOutputLevel / (128 * 128 * this.channelCount);
+            samples[i] = this.leftOutputLevel / (128 * 128 * this.channelCount);
+            samples[i+1] = this.rightOutputLevel / (128 * 128 * this.channelCount);
             i += 2;
         }
 
-        return this.samples;
+        this.emit('data', samples);
+
+        return samples;
     }
 
 });
