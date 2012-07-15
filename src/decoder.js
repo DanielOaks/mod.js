@@ -96,6 +96,24 @@ MODDecoder = Decoder.extend(function() {
         this.floatingPoint = true;
     }
 
+    // Chrome doesn't support changing the sample rate, and uses whatever the hardware supports.
+    this.prototype.hardwareSampleRate = (function() {
+        var AudioContext = (window.AudioContext || window.webkitAudioContext);
+        if (!AudioContext)
+            return 44100;    
+
+        return new AudioContext().sampleRate;
+    }());
+
+    this.prototype.resampleHack = function(sample) {
+        if (this.hardwareSampleRate != this.rate) {
+            var resampler = new Resampler(this.rate, this.hardwareSampleRate, this.channelCount /* Assume stereo */, /*outputBufferSize*/this.bufferLength/*?*/, false /* always return */);
+            return resampler.resampler(sample);
+        } else {
+            return sample;
+        }
+    }
+
     this.prototype.getSample = function(str) {
         if (!this.stream.available(30))
             return; // return if there isn't a full sample loaded.
@@ -710,7 +728,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
 
         //console.log("Got " + sampleCount + " samples.");
 
-        return samples;
+        return this.resampleHack(samples);
     }
 
 });
