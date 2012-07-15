@@ -4,16 +4,22 @@
 		<script src="build.js"></script>
 
 		<script>
+			var player = undefined;
 
 			function play() {
-				playing = true;
-				status('<a href="javascript:pause();">Pause</a>');
-				bufferMoreData();
+				if (!player) {
+					document.querySelector('#songs li a:first-child').onclick();
+				} else {
+					player.play();
+				}
+				document.getElementById('play' ).style.display = 'none';
+				document.getElementById('pause').style.display = 'block';
 			}
 
 			function pause() {
-				playing = false;
-				status('<a href="javascript:play();">Play</a>');
+				player.pause()
+				document.getElementById('play' ).style.display = 'block';
+				document.getElementById('pause').style.display = 'none';
 			}
 
 			function status(text) {
@@ -21,6 +27,11 @@
 			}
 
 			function loadRemote(file) {
+				if (player) {
+					player.disconnect();
+					player = undefined;
+				}
+
 				player = Player.fromURL(file);
 				player.play();
 
@@ -71,6 +82,15 @@
 				display: inline-block;
 				padding: 10px;
 			}
+
+			#pause {
+				display: none;
+			}
+
+			#songs li a {
+				text-decoration: underline;
+				color: blue;
+			}
 		</style>
 	</head>
 	<body>
@@ -83,15 +103,16 @@
 			<p><span id="buffered">0</span>% buffered.</p>
 			<p><span id="played">00:00</span> played.</p>
 			<p id="error"></p>
+			<button id="play" onclick="play()">Play</button><button id="pause" onclick="pause()">Pause</button>
 		</div>
-		<ul>
-			<li><a href="javascript:loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
-			<li><a href="javascript:loadRemote('mods/dope.mod')">Dope / Onward Ride (Jugi / Complex)</a></li>
-			<li><a href="javascript:loadRemote('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
-			<li><a href="javascript:loadRemote('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
-			<li><a href="javascript:loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
-			<li><a href="javascript:loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
-			<li><a href="javascript:loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
+		<ul id="songs">
+			<li><a onclick="loadRemote('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
+			<li><a onclick="loadRemote('mods/dope.mod')">Dope / Onward Ride (Jugi / Complex)</a></li>
+			<li><a onclick="loadRemote('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
+			<li><a onclick="loadRemote('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
+			<li><a onclick="loadRemote('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
+			<li><a onclick="loadRemote('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
+			<li><a onclick="loadRemote('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
 		</ul>
 		<p>This is a work in progress - not all effects are implemented yet. Sound output is done with Ben Firshman's <a href="http://github.com/bfirsh/dynamicaudio.js">dynamicaudio.js</a> (using Firefox's audio data API, falling back on Flash if not available).</p>
 
