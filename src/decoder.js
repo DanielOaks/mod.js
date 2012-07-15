@@ -89,8 +89,9 @@ MODDecoder = Decoder.extend(function() {
 
         this.channels = [];
 
-        this.bufferSeconds = 1.5;
-        this.bufferLength = this.rate * 2 * this.bufferSeconds;
+        //this.bufferSeconds = 1.5;
+        //this.bufferLength = this.rate * 2 * this.bufferSeconds;
+        this.bufferLength = 200;
 
         this.floatingPoint = true;
     }
