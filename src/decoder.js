@@ -90,7 +90,7 @@ MODDecoder = Decoder.extend(function() {
         this.channels = [];
 
         this.bufferSeconds = 5;
-        this.bufferLength = this.rate * 2 * this.bufferSeconds;
+        this.bufferLength = this.rate;// * 2 * this.bufferSeconds;
 
         this.floatingPoint = true;
     }
@@ -201,15 +201,24 @@ MODDecoder = Decoder.extend(function() {
                 this.readSampleData();
 
                 // Play the audio!
-                this.setChannels();
                 this.setBpm(125);
+                this.setChannels();
                 this.loadPosition(0);
-                console.log(this.getSamples());
             } else {
                 console.log("[decoder] Found something @ " + pos);
                 console.log("[decoder] Remaining: " + remaining);
+
                 break;
             }
+        }
+
+        if (stream.offset >= 950) {
+            var samples = this.getSamples();
+
+            console.log(stream.remainingBytes());
+            this.emit('data', samples);
+
+            return;
         }
 
         console.log("[decoder] Remaining: " + stream.remainingBytes());
@@ -698,7 +707,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
             i += 2;
         }
 
-        this.emit('data', samples);
+        console.log("Got " + sampleCount + " samples.");
 
         return samples;
     }
