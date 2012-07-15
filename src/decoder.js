@@ -89,8 +89,8 @@ MODDecoder = Decoder.extend(function() {
 
         this.channels = [];
 
-        this.bufferSeconds = 5;
-        this.bufferLength = this.rate;// * 2 * this.bufferSeconds;
+        this.bufferSeconds = 2;
+        this.bufferLength = this.rate * 2 * this.bufferSeconds;
 
         this.floatingPoint = true;
     }
@@ -218,7 +218,7 @@ MODDecoder = Decoder.extend(function() {
 
         if (stream.offset >= 950) {
             var samples = this.getSamples();
-
+//console.log(samples);return;
             this.emit('data', samples);
         }
 
@@ -688,7 +688,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
 
                     if (channel.playing) {
                         var rawVol = this.sampleData[channel.sampleNum][channel.samplePosition];
-                        var vol = (((this.rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
+                        var vol = (((rawVol + 128) & 0xff) - 128) * channel.volume; /* range (-128*64)..(127*64) */
                         if (chan & 3 == 0 || chan & 3 == 3) { /* hard panning(?): left, right, right, left */
                             this.leftOutputLevel += (vol + channel.pan) * 3;
                             this.rightOutputLevel += (vol + 0xFF - channel.pan);
@@ -707,7 +707,7 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
             i += 2;
         }
 
-        console.log("Got " + sampleCount + " samples.");
+        //console.log("Got " + sampleCount + " samples.");
 
         return samples;
     }
