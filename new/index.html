@@ -7,13 +7,14 @@
 			var player = undefined;
 
 			function play(file) {
-				if (!player) {
-					if(!file)
+				if (typeof file == "undefined") {
+					if (!player) {
 						document.querySelector('#songs li a:first-child').onclick();
-					else
-						loadRemote(file);
+					} else {
+						player.play();
+					}
 				} else {
-					player.play();
+					loadRemote(file);
 				}
 				document.getElementById('play' ).style.display = 'none';
 				document.getElementById('pause').style.display = 'block';
@@ -30,9 +31,8 @@
 			}
 
 			function loadRemote(file) {
-				if (player) {
+				if (typeof player != "undefined") {
 					player.pause();
-					player = undefined;
 				}
 
 				player = Player.fromURL(file);
