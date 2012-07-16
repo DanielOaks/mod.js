@@ -35,6 +35,8 @@
 					player.pause();
 				}
 
+				document.querySelector('.volume').style.display = 'inline-block';
+
 				player = Player.fromURL(file);
 				player.play();
 
@@ -72,6 +74,10 @@
 					document.getElementById('error').innerText = error;
   				});
 			}
+
+			function volume(value) {
+				player.volume = value;
+			}
 		</script>
 
 		<style>
@@ -94,17 +100,43 @@
 				text-decoration: underline;
 				color: blue;
 			}
+
+			.volume {
+				-moz-transform:rotate(-90deg);
+				-webkit-transform:rotate(-90deg);
+				margin: 0px;
+				padding: 0px;
+				margin-top: 55px;
+				display: none;
+			}
+
+			.left {
+				float: left;
+			}
+			.right {
+				float: right;
+			}
+
+			.left, .right {
+				position: relative;
+				height: 150px;
+			}
 		</style>
 	</head>
 	<body>
 		<h1>mod.js</h1>
 		<p>Javascript MOD player using Aurora.js and the resampler from XAudioJS.</p>
-	    <div id="player">
-			<p><strong id="title">&lt;unknown title&gt;</strong></p>
-			<p><span id="buffered">0</span>% buffered.</p>
-			<p><span id="played">00:00</span> played.</p>
-			<p id="error"></p>
-			<button id="play" onclick="play()">Play</button><button id="pause" onclick="pause()">Pause</button>
+	   <div id="player">
+			<div class="left">
+				<p><strong id="title">&lt;unknown title&gt;</strong></p>
+				<p><span id="buffered">0</span>% buffered.</p>
+				<p><span id="played">00:00</span> played.</p>
+				<p id="error"></p>
+				<p><button id="play" onclick="play()">Play</button><button id="pause" onclick="pause()">Pause</button></p>
+			</div>
+			<div class="right">
+				<p><input class="volume" type="range" onchange="volume(this.value);"></p>
+			</div>
 		</div>
 		<ul id="songs">
 			<li><a onclick="play('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
