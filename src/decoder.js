@@ -107,7 +107,7 @@ MODDecoder = Decoder.extend(function() {
 
     this.prototype.resampleHack = function(sample) {
         if (this.hardwareSampleRate != this.rate) {
-            var resampler = new Resampler(this.rate, this.hardwareSampleRate, this.channelCount /* Assume stereo */, /*outputBufferSize*/this.bufferLength/*?*/, false /* always return */);
+            var resampler = new Resampler(this.rate, this.hardwareSampleRate, this.channelCount, this.bufferLength, false /* always return */);
             return resampler.resampler(sample);
         } else {
             return sample;
