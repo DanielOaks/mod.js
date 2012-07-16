@@ -30,14 +30,14 @@
 				document.getElementById('status').innerHTML = text;
 			}
 
-			function loadRemote(file) {
+			function loadRemote(url) {
 				if (typeof player != "undefined") {
 					player.pause();
 				}
 
 				document.querySelector('.volume').style.display = 'inline-block';
 
-				player = Player.fromURL(file);
+				player = Player.fromURL(url);
 				player.play();
 
 				player.on('buffer', function(percent) {
@@ -63,12 +63,15 @@
 				});
 
 				player.on('metadata', function(metadata) {
-					if (metadata['title'] == '') {
-						document.getElementById('title').innerText = "<unknown title>";
-					} else {
-						document.getElementById('title').innerText = metadata['title'];
+					var title = metadata['title'];
+
+					if (title == '') {
+						var tmp   = url.split("/");
+						title = tmp[tmp.length - 1] || "<unknown title>";
 					}
-  				});
+
+					document.getElementById('title').innerText = title;
+				});
 
 				player.on('error', function(error) {
 					document.getElementById('error').innerText = error;
