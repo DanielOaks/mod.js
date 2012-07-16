@@ -9,7 +9,7 @@
 			function play(file) {
 				if (typeof file == "undefined") {
 					if (!player) {
-						document.querySelector('#songs li a:first-child').onclick();
+						document.querySelector('.files li a:first-child').onclick();
 					} else {
 						player.play();
 					}
@@ -99,7 +99,7 @@
 				display: none;
 			}
 
-			#songs li a {
+			.files li a {
 				text-decoration: underline;
 				color: blue;
 			}
@@ -141,7 +141,7 @@
 				<p><input class="volume" type="range" onchange="volume(this.value);"></p>
 			</div>
 		</div>
-		<ul id="songs">
+		<ul class="files">
 			<li><a onclick="play('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
 			<li><a onclick="play('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
 			<li><a onclick="play('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
@@ -150,6 +150,16 @@
 			<li><a onclick="play('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
 			<li><a onclick="play('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
 		</ul>
+		<p>&nbsp;</p>
+		<ul class="files">
+			<li><a onclick="play('tests/basic.mod')">Simple playback. Play C major scale for 1 octave.</a></li>
+			<li><a onclick="play('tests/break.mod')">Immediately play C major scale <em>backwards</em>, without playing it forwards first.</a></li>
+			<li><a onclick="play('tests/break_far.mod')">Immediately play C major scale <em>backwards</em>, without playing it forwards first. (#2)</a></li>
+			<li><a onclick="play('tests/jump.mod')">Immediately plays C major scale <em>backwards</em>, without playing it forwards first. (#3)</a></li>
+			<li><a onclick="play('tests/fineporta.mod')">Alternates between normal slide (1xx) and fine slide. They should sound identical.</a></li>
+			<li><a onclick="play('tests/ex_loop.mod')">Play first four notes of C major scale twice, then play the whole scale.</a></li>
+		</ul>
+		<p>&nbsp;</p>
 		<p>This is a work in progress - not all effects are implemented yet.</p>
 		<p>If you have any questions, I'm on twitter as <a href="http://twitter.com/duckinator">@duckinator</a>.</p>
 		<p>&nbsp;</p>
