@@ -80,7 +80,7 @@ MODDemuxer = Demuxer.extend(function() {
             'title': title
         });
 
-        console.log("[demuxer] Title: " + this.title);
+        console.log("[demuxer] Title: " + title);
 
         // Store identifier if it's not already there.
         if (!('identifier' in this)) {
