@@ -721,8 +721,8 @@ for (var i = 0; i < this.modPeriodTable[0].length; i++) {
                 }
             }
 
-            samples[i] = this.leftOutputLevel / (128 * 128 * this.channelCount);
-            samples[i+1] = this.rightOutputLevel / (128 * 128 * this.channelCount);
+            samples[i] = this.rightOutputLevel / (128 * 128 * this.channelCount);
+            samples[i+1] = this.leftOutputLevel / (128 * 128 * this.channelCount);
             i += 2;
         }
 
