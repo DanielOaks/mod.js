@@ -77,7 +77,7 @@ MODDemuxer = Demuxer.extend(function() {
         // The title is 20 bytes long, with all null bytes trimmed.
         var title = trimNulls(stream.peekString(0, 20));
         this.emit('metadata', {
-            'title': title
+            'Title': title
         });
 
         console.log("[demuxer] Title: " + title);
