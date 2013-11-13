@@ -1,10 +1,30 @@
-To build: `import mod.js build.js`
+mod.js
+======
+
+
+Installation
+------------
+
+Fetch the aurora.js dependency:
+
+    git submodule init
+    git submodule update
+
+Install 'importer' with npm:
+
+    sudo npm install importer -g
+
+Build the javascript code with importer (https://npmjs.org/package/importer)
+
+    importer mod.js build.js
+
 
 Demo: http://seanneilan.com/media/jsmodplayer/
 
-```
+Effects implemented
+-------------------
 
-Effects implemented:
+```
 
 0xy: Arpeggio
 1xx: Pitch slide up (portamento)
@@ -54,10 +74,9 @@ Exy Subcommands:
 
 http://www.milkytracker.org/docs/MilkyTracker.html#effects
 
-----------------------------------------------------------
-
-TODO:
+TODO
+----
 
 * Implement additional effects. Try to pass the Ode to Protracker test :)
 * Wean off dynamicaudio.js (eventually)
-	
+
