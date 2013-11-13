@@ -21,10 +21,12 @@ Build the javascript code with importer (https://npmjs.org/package/importer)
 
 Demo: http://seanneilan.com/media/jsmodplayer/
 
-Effects implemented
+Protracker features
 -------------------
 
 ```
+
+Effects implemented:
 
 0xy: Arpeggio
 1xx: Pitch slide up (portamento)
