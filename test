@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cd `dirname $0` && importer mod.js build.js && cp build.js demo/build.js && cd demo && python3 -m http.server
+cd `dirname $0` && importer base.js mod.js && cp mod.js demo/mod.js && cp vendor/aurora.js* demo && cd demo && python3 -m http.server

@@ -27,8 +27,8 @@
  *
  */
 
-MODDemuxer = Demuxer.extend(function() {
-    Demuxer.register(this);
+MODDemuxer = AV.Demuxer.extend(function() {
+    AV.Demuxer.register(this);
 
     this.channelCountByIdentifier = {
         'TDZ1': 1, '1CHN': 1, 'TDZ2': 2, '2CHN': 2, 'TDZ3': 3, '3CHN': 3,
@@ -63,7 +63,7 @@ MODDemuxer = Demuxer.extend(function() {
             console.log("[demuxer] Found more data @ " + pos);
             while (stream.available(1)) {
                 buf = stream.readSingleBuffer(stream.remainingBytes());
-                this.emit('data', buf);
+                this.emit('data', buf, !(stream.available(1)));
             }
             return;
         }
@@ -100,7 +100,7 @@ MODDemuxer = Demuxer.extend(function() {
 
         while (stream.available(1)) {
             buf = stream.readSingleBuffer(stream.remainingBytes());
-            this.emit('data', buf);
+            this.emit('data', buf, !(stream.available(1)));
         }
     }
 });

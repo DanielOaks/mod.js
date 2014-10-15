@@ -32,8 +32,8 @@
  * - The first 20 bytes of the file are *ALWAYS* taken by the demuxer, for the title.
  */
 
-MODDecoder = Decoder.extend(function() {
-    Decoder.register('mod', this);
+MODDecoder = AV.Decoder.extend(function() {
+    AV.Decoder.register('mod', this);
 
     // Remove null bytes from a string
     function trimNulls(str) {
@@ -191,7 +191,8 @@ MODDecoder = Decoder.extend(function() {
         if (stream.offset == 0) {
             // Need 20 bytes for title
             if (stream.remainingBytes() < 20) {
-                return this.once('available', this.readChunk);
+                this.once('available', this.readChunk);
+                return;
             }
 
             stream.advance(20);
@@ -236,8 +237,8 @@ MODDecoder = Decoder.extend(function() {
 
         if (stream.offset >= 950) {
             var samples = this.getSamples();
-//console.log(samples);return;
-            this.emit('data', samples);
+//console.log(samples);return samples;
+            return samples;
         }
 
         //console.log("[decoder] Offset:    " + stream.offset);
