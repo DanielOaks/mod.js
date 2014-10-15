@@ -16,7 +16,7 @@ Install 'importer' with npm:
 
 Build the javascript code with importer (https://npmjs.org/package/importer)
 
-    importer mod.js build.js
+    importer base.js mod.js
 
 
 Demo: http://seanneilan.com/media/jsmodplayer/
