@@ -5,18 +5,17 @@ mod.js
 Installation
 ------------
 
-Fetch the aurora.js dependency:
-
-    git submodule init
-    git submodule update
-
 Install 'importer' with npm:
 
     sudo npm install importer -g
 
-Build the javascript code with importer (https://npmjs.org/package/importer)
+Build the javascript code and put it into `demo/` using the provided 'build script'
 
-    importer base.js mod.js
+	./build
+
+If you want to test it, you can by having Python3 installed and running the test script, then heading to http://localhost:8000 in your browser.
+
+	./test
 
 
 Demo: http://seanneilan.com/media/jsmodplayer/
