@@ -1,0 +1,186 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<script src="aurora.js"></script>
+		<script src="mod.js"></script>
+
+		<script>
+			var player = undefined;
+
+			function play(file) {
+				if (typeof file == "undefined") {
+					if (!player) {
+						document.querySelector('.files li a:first-child').onclick();
+					} else {
+						player.play();
+					}
+				} else {
+					loadRemote(file);
+				}
+				document.getElementById('play' ).style.display = 'none';
+				document.getElementById('pause').style.display = 'block';
+			}
+
+			function pause() {
+				player.pause()
+				document.getElementById('play' ).style.display = 'block';
+				document.getElementById('pause').style.display = 'none';
+			}
+
+			function status(text) {
+				document.getElementById('status').innerHTML = text;
+			}
+
+			function loadRemote(url) {
+				if (typeof player != "undefined") {
+					player.pause();
+				}
+
+				document.querySelector('.volume').style.display = 'inline-block';
+
+				player = AV.Player.fromURL(url);
+				player.play();
+
+				player.on('buffer', function(percent) {
+					document.getElementById('buffered').innerText = Math.floor(percent).toString();
+				});
+
+				player.on('progress', function(percent) {
+					// Since there's no duration, I believe this is milliseconds.
+					var mins, sec, msec;
+					msec = Math.floor(percent),
+					secs = msec/1000;
+					mins = Math.floor(secs/60).toString();
+					secs = Math.floor(secs%60).toString();
+					if (secs.length < 2) {
+						secs = "0" + secs;
+					}
+
+					if (mins.length < 2) {
+						mins = "0" + mins;
+					}
+
+					document.getElementById('played').innerText = mins + ":" + secs;
+				});
+
+				player.on('metadata', function(metadata) {
+					var title = metadata['Title'];
+
+					if (title == '') {
+						var tmp   = url.split("/");
+						title = tmp[tmp.length - 1] || "<unknown title>";
+					}
+
+					document.getElementById('title').innerText = title;
+				});
+
+				player.on('error', function(error) {
+					document.getElementById('error').innerText = error;
+  				});
+			}
+
+			function volume(value) {
+				player.volume = value;
+			}
+		</script>
+
+		<style>
+			p {
+				margin-top: 8px;
+				margin-bottom: 8px;
+			}
+
+			#player {
+				border: 1px solid #000;
+				display: inline-block;
+				padding: 10px;
+			}
+
+			#pause {
+				display: none;
+			}
+
+			.files li a {
+				text-decoration: underline;
+				color: blue;
+				cursor: pointer;
+			}
+
+			.volume {
+				-moz-transform:rotate(-90deg);
+				-webkit-transform:rotate(-90deg);
+				margin: 0px;
+				padding: 0px;
+				margin-top: 55px;
+				display: none;
+			}
+
+			.left {
+				float: left;
+			}
+			.right {
+				float: right;
+			}
+
+			.left, .right {
+				position: relative;
+				height: 150px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>mod.js</h1>
+		<p>Javascript MOD player using Aurora.js and the resampler from XAudioJS.</p>
+		<div id="player">
+			<div class="left">
+				<p><strong id="title">&lt;unknown title&gt;</strong></p>
+				<p><span id="buffered">0</span>% buffered.</p>
+				<p><span id="played">00:00</span> played.</p>
+				<p id="error"></p>
+				<p><button id="play" onclick="play()">Play</button><button id="pause" onclick="pause()">Pause</button></p>
+			</div>
+			<div class="right">
+				<p><input class="volume" type="range" onchange="volume(this.value);"></p>
+			</div>
+		</div>
+		<p>Songs:</p>
+		<ul class="files">
+			<!--<li><a onclick="play('mods/Future_Crew_-_Second_Reality_(Skaven).s3m')">Second Reality (Future Crew / Purple Motion)</a></li>-->
+			<li><a onclick="play('mods/frust.mod')">Mental Frustration (Nugget / Rebels)</a></li>
+			<li><a onclick="play('mods/RandomVoice-Monday.mod')">Monday (Edvin Fladen a.k.a "Random Voice")</a></li>
+			<li><a onclick="play('mods/ambpower.mod')">Ambient Power (Vogue / Triton)</a></li>
+			<li><a onclick="play('mods/dope.mod')">Dope / Onward Ride (Jugi / Complex)</a></li>
+			<li><a onclick="play('mods/mindkick.mod')">Mindkick (Mindfuck / Mentasm)</a></li>
+			<li><a onclick="play('mods/sundance.mod')">Sundance (Purple Motion / Future Crew)</a></li>
+			<li><a onclick="play('mods/ode_to_protracker.mod')">Ode to Protracker (Asle / Sylvain Chipaux)</a></li>
+		</ul>
+		<p>Tests:</p>
+		<ul class="files">
+			<li><a onclick="play('tests/basic.mod')">Simple playback. Play C major scale for 1 octave.</a></li>
+			<li><a onclick="play('tests/break.mod')">Immediately play C major scale <em>backwards</em>, without playing it forwards first.</a></li>
+			<li><a onclick="play('tests/break_far.mod')">Immediately play C major scale <em>backwards</em>, without playing it forwards first. (#2)</a></li>
+			<li><a onclick="play('tests/jump.mod')">Immediately plays C major scale <em>backwards</em>, without playing it forwards first. (#3)</a></li>
+			<li><a onclick="play('tests/fineporta.mod')">Alternates between normal slide (1xx) and fine slide. They should sound identical.</a></li>
+			<li><a onclick="play('tests/ex_loop.mod')">Play first four notes of C major scale twice, then play the whole scale.</a></li>
+		</ul>
+		<p>&nbsp;</p>
+		<p>This is a work in progress - not all effects are implemented yet.</p>
+		<p>If you have any questions, I'm on twitter as <a href="http://twitter.com/duckinator">@duckinator</a>.</p>
+		<p>&nbsp;</p>
+		<p>Links:</p>
+		<ul>
+			<li><a href="https://github.com/duckinator/mod.js">mod.js</a></li>
+			<li><a href="https://github.com/ofmlabs/aurora.js">Aurora.js</a></li>
+			<li><a href="https://github.com/grantgalitz/XAudioJS">XAudioJS</a></li>
+		</ul>
+		<p>&nbsp;</p>
+		<p>Thanks to:</p>
+		<ul>
+			<li><a href="http://github.com/gasman">Matt Westcott (gasman)</a>, for starting <a href="http://github.com/gasman/jsmodplayer">jsmodplayer</a>, which this is based on.</li>
+			<li><a href="https://github.com/BillyWM">William Wenge-Murphy (BillyWM)</a>, for his <a href="https://github.com/BillyWM/jsmodplayer">contributions</a> to jsmodplayer.</li>
+			<li><a href="https://github.com/sneilan">Sean Neilan (sneilan)</a>, for his <a href="https://github.com/sneilan/jsmodplayer">contributions</a> to jsmodplayer.</li>
+			<li>Everyone at <a href="http://labs.official.fm">Official.fm Labs</a>, and any other contributors to <a href="https://github.com/ofmlabs/aurora.js">Aurora.js</a></li>
+			<li><a href="https://github.com/grantgalitz">Grant Galitz (grantg, grantgalitz)</a>, and any other contributors to <a href="https://github.com/grantgalitz/XAudioJS">XAudioJS</a>, where I found a <a href="https://github.com/grantgalitz/XAudioJS/blob/master/resampler.js">resampler</a> to use for this project.</li>
+		</ul>
+	</body>
+</html>
