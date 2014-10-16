@@ -3265,7 +3265,7 @@ WebAudioDevice = (function(_super) {
     for (i = _j = 0, _ref = outputBuffer.length; _j < _ref; i = _j += 1) {
       for (n = _k = 0; _k < channelCount; n = _k += 1) {
         channels[n][i] = data[i * channelCount + n];
-        if (i == 0) {console.log(channels[n][i])};
+        if (i == 0) {console.log('example channel data:', channels[n][i])};
       }
     }
   };
